@@ -25,16 +25,20 @@
 package com.github.akarazhev.cryptoscout.analyst;
 
 import com.github.akarazhev.cryptoscout.analyst.db.StreamOffsetsRepository;
+import com.github.akarazhev.jcryptolib.stream.Provider;
 import com.rabbitmq.stream.Message;
 import com.rabbitmq.stream.MessageHandler;
+import com.rabbitmq.stream.Producer;
 import com.rabbitmq.stream.SubscriptionListener;
 import io.activej.async.service.ReactiveService;
 import io.activej.promise.Promise;
+import io.activej.promise.SettablePromise;
 import io.activej.reactor.AbstractReactive;
 import io.activej.reactor.nio.NioReactor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 import com.github.akarazhev.cryptoscout.config.AmqpConfig;
@@ -44,23 +48,24 @@ import com.rabbitmq.stream.Consumer;
 import com.rabbitmq.stream.Environment;
 import com.rabbitmq.stream.OffsetSpecification;
 
-public final class AmqpConsumer extends AbstractReactive implements ReactiveService {
-    private final static Logger LOGGER = LoggerFactory.getLogger(AmqpConsumer.class);
+public final class AmqpClient extends AbstractReactive implements ReactiveService {
+    private final static Logger LOGGER = LoggerFactory.getLogger(AmqpClient.class);
     private final Executor executor;
     private final StreamOffsetsRepository streamOffsetsRepository;
     private final CryptoBybitAnalyst cryptoBybitAnalyst;
     private volatile Environment environment;
-    private volatile Consumer streamBybitConsumer;
+    private volatile Consumer consumer;
+    private volatile Producer producer;
 
-    public static AmqpConsumer create(final NioReactor reactor, final Executor executor,
-                                      final StreamOffsetsRepository streamOffsetsRepository,
-                                      final CryptoBybitAnalyst cryptoBybitAnalyst) {
-        return new AmqpConsumer(reactor, executor, streamOffsetsRepository, cryptoBybitAnalyst);
+    public static AmqpClient create(final NioReactor reactor, final Executor executor,
+                                    final StreamOffsetsRepository streamOffsetsRepository,
+                                    final CryptoBybitAnalyst cryptoBybitAnalyst) {
+        return new AmqpClient(reactor, executor, streamOffsetsRepository, cryptoBybitAnalyst);
     }
 
-    private AmqpConsumer(final NioReactor reactor, final Executor executor,
-                         final StreamOffsetsRepository streamOffsetsRepository,
-                         final CryptoBybitAnalyst cryptoBybitAnalyst) {
+    private AmqpClient(final NioReactor reactor, final Executor executor,
+                       final StreamOffsetsRepository streamOffsetsRepository,
+                       final CryptoBybitAnalyst cryptoBybitAnalyst) {
         super(reactor);
         this.executor = executor;
         this.streamOffsetsRepository = streamOffsetsRepository;
@@ -72,15 +77,21 @@ public final class AmqpConsumer extends AbstractReactive implements ReactiveServ
         return Promise.ofBlocking(executor, () -> {
             try {
                 final var cryptoBybitStream = AmqpConfig.getAmqpCryptoBybitStream();
-                streamBybitConsumer = environment.consumerBuilder()
+                final var cryptoBybitTaStream = AmqpConfig.getAmqpCryptoBybitTaStream();
+                environment = AmqpConfig.getEnvironment();
+                producer = environment.producerBuilder()
+                        .name(cryptoBybitTaStream)
+                        .stream(cryptoBybitTaStream)
+                        .build();
+                consumer = environment.consumerBuilder()
                         .stream(cryptoBybitStream)
                         .noTrackingStrategy()
                         .subscriptionListener(c -> updateOffset(cryptoBybitStream, c))
-                        .messageHandler(this::consumePayload)
+                        .messageHandler((c, m) -> consumePayload(cryptoBybitTaStream, c, m))
                         .build();
-                LOGGER.info("AmqpConsumer started");
+                LOGGER.info("AmqpClient started");
             } catch (final Exception ex) {
-                LOGGER.error("Failed to start AmqpConsumer", ex);
+                LOGGER.error("Failed to start AmqpClient", ex);
                 throw new RuntimeException(ex);
             }
         });
@@ -89,10 +100,12 @@ public final class AmqpConsumer extends AbstractReactive implements ReactiveServ
     @Override
     public Promise<?> stop() {
         return Promise.ofBlocking(executor, () -> {
-            closeConsumer(streamBybitConsumer);
-            streamBybitConsumer = null;
+            closeConsumer(consumer);
+            consumer = null;
+            closeProducer(producer);
+            producer = null;
             closeEnvironment();
-            LOGGER.info("AmqpConsumer stopped");
+            LOGGER.info("AmqpClient stopped");
         });
     }
 
@@ -119,16 +132,49 @@ public final class AmqpConsumer extends AbstractReactive implements ReactiveServ
     }
 
     @SuppressWarnings("unchecked")
-    private void consumePayload(final MessageHandler.Context context, final Message message) {
+    private void consumePayload(final String stream, final MessageHandler.Context context, final Message message) {
         reactor.execute(() -> Promise.ofBlocking(executor, () ->
                         JsonUtils.bytes2Object(message.getBodyAsBinary(), Payload.class))
-                .then(payload -> cryptoBybitAnalyst.analyze(payload, context.offset()))
+                .then(payload -> cryptoBybitAnalyst.analyze(payload))
                 .whenComplete((_, ex) -> {
                     if (ex != null) {
                         LOGGER.error("Failed to process stream message: {}", ex);
+                    } else {
+                        streamOffsetsRepository.upsertOffset(stream, context.offset());
                     }
                 })
         );
+    }
+
+    public Promise<?> publish(final Payload<Map<String, Object>> payload) {
+        final var provider = payload.getProvider();
+        final var source = payload.getSource();
+        if (!Provider.JCRYPTOLIB.equals(provider)) {
+            LOGGER.debug("Skipping publish: no stream route for provider={} source={}", provider, source);
+            return Promise.of(null);
+        }
+
+        final var settablePromise = new SettablePromise<Void>();
+        try {
+            final var message = producer.messageBuilder()
+                    .addData(JsonUtils.object2Bytes(payload))
+                    .build();
+            producer.send(message, confirmationStatus ->
+                    reactor.execute(() -> {
+                        if (confirmationStatus.isConfirmed()) {
+                            settablePromise.set(null);
+                        } else {
+                            settablePromise.setException(new RuntimeException("Stream publish not confirmed: " +
+                                    confirmationStatus));
+                        }
+                    })
+            );
+        } catch (final Exception ex) {
+            LOGGER.error("Failed to publish payload to stream: {}", ex.getMessage(), ex);
+            settablePromise.setException(ex);
+        }
+
+        return settablePromise;
     }
 
     private void closeConsumer(final Consumer consumer) {
@@ -138,6 +184,16 @@ public final class AmqpConsumer extends AbstractReactive implements ReactiveServ
             }
         } catch (final Exception ex) {
             LOGGER.warn("Error closing stream consumer", ex);
+        }
+    }
+
+    private void closeProducer(final Producer producer) {
+        try {
+            if (producer != null) {
+                producer.close();
+            }
+        } catch (final Exception ex) {
+            LOGGER.warn("Error closing stream producer", ex);
         }
     }
 

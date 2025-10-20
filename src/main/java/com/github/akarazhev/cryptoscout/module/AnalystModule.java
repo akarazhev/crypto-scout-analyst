@@ -24,7 +24,7 @@
 
 package com.github.akarazhev.cryptoscout.module;
 
-import com.github.akarazhev.cryptoscout.analyst.AmqpConsumer;
+import com.github.akarazhev.cryptoscout.analyst.AmqpClient;
 import com.github.akarazhev.cryptoscout.analyst.CryptoBybitAnalyst;
 import com.github.akarazhev.cryptoscout.analyst.db.AnalystDataSource;
 import com.github.akarazhev.cryptoscout.analyst.db.StreamOffsetsRepository;
@@ -56,16 +56,15 @@ public final class AnalystModule extends AbstractModule {
     }
 
     @Provides
-    private CryptoBybitAnalyst cryptoBybitAnalyst(final NioReactor reactor, final Executor executor,
-                                                    final StreamOffsetsRepository streamOffsetsRepository) {
-        return CryptoBybitAnalyst.create(reactor, executor, streamOffsetsRepository);
+    private CryptoBybitAnalyst cryptoBybitAnalyst(final NioReactor reactor, final Executor executor) {
+        return CryptoBybitAnalyst.create(reactor, executor);
     }
 
     @Provides
     @Eager
-    private AmqpConsumer amqpConsumer(final NioReactor reactor, final Executor executor,
-                                      final StreamOffsetsRepository streamOffsetsRepository,
-                                      final CryptoBybitAnalyst cryptoBybitAnalyst) {
-        return AmqpConsumer.create(reactor, executor, streamOffsetsRepository, cryptoBybitAnalyst);
+    private AmqpClient AmqpClient(final NioReactor reactor, final Executor executor,
+                                  final StreamOffsetsRepository streamOffsetsRepository,
+                                  final CryptoBybitAnalyst cryptoBybitAnalyst) {
+        return AmqpClient.create(reactor, executor, streamOffsetsRepository, cryptoBybitAnalyst);
     }
 }

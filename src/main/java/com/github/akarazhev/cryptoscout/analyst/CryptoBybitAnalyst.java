@@ -24,8 +24,6 @@
 
 package com.github.akarazhev.cryptoscout.analyst;
 
-import com.github.akarazhev.cryptoscout.analyst.db.StreamOffsetsRepository;
-import com.github.akarazhev.cryptoscout.config.AmqpConfig;
 import com.github.akarazhev.jcryptolib.stream.Payload;
 import com.github.akarazhev.jcryptolib.stream.Provider;
 import io.activej.async.service.ReactiveService;
@@ -41,20 +39,14 @@ import java.util.concurrent.Executor;
 public final class CryptoBybitAnalyst extends AbstractReactive implements ReactiveService {
     private final static Logger LOGGER = LoggerFactory.getLogger(CryptoBybitAnalyst.class);
     private final Executor executor;
-    private final StreamOffsetsRepository streamOffsetsRepository;
-    private final String stream;
 
-    public static CryptoBybitAnalyst create(final NioReactor reactor, final Executor executor,
-                                            final StreamOffsetsRepository streamOffsetsRepository) {
-        return new CryptoBybitAnalyst(reactor, executor, streamOffsetsRepository);
+    public static CryptoBybitAnalyst create(final NioReactor reactor, final Executor executor) {
+        return new CryptoBybitAnalyst(reactor, executor);
     }
 
-    private CryptoBybitAnalyst(final NioReactor reactor, final Executor executor,
-                               final StreamOffsetsRepository streamOffsetsRepository) {
+    private CryptoBybitAnalyst(final NioReactor reactor, final Executor executor) {
         super(reactor);
         this.executor = executor;
-        this.streamOffsetsRepository = streamOffsetsRepository;
-        this.stream = AmqpConfig.getAmqpCryptoBybitStream();
     }
 
     @Override
@@ -69,15 +61,14 @@ public final class CryptoBybitAnalyst extends AbstractReactive implements Reacti
         return Promise.complete();
     }
 
-    public Promise<?> analyze(final Payload<Map<String, Object>> payload, final long offset) {
+    public Promise<?> analyze(final Payload<Map<String, Object>> payload) {
         if (!Provider.BYBIT.equals(payload.getProvider())) {
             LOGGER.warn("Invalid payload: {}", payload);
             return Promise.complete();
         }
 
         return Promise.ofBlocking(executor, () -> {
-            // todo: bulk upsert
-            streamOffsetsRepository.upsertOffset(stream, offset);
+            // todo: analyze payload
         });
     }
 }
