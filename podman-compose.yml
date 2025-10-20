@@ -1,0 +1,139 @@
+version: "3.9"
+
+services:
+  crypto-scout-analyst-db:
+    image: timescale/timescaledb:latest-pg17
+    container_name: crypto-scout-analyst-db
+    cpus: "2.00"
+    memory: 8G
+    shm_size: "1g"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgresql:/var/lib/postgresql/data
+      - ./script/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - crypto-scout-bridge
+    env_file:
+      - ./secret/timescaledb.env
+    environment:
+      TZ: UTC
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=timescaledb,pg_stat_statements
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=2GB
+      - -c
+      - effective_cache_size=6GB
+      - -c
+      - maintenance_work_mem=1GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - autovacuum_work_mem=256MB
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_size=8GB
+      - -c
+      - min_wal_size=2GB
+      - -c
+      - checkpoint_timeout=15min
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_compression=on
+      - -c
+      - timezone=UTC
+      - -c
+      - log_min_duration_statement=500ms
+      - -c
+      - log_checkpoints=on
+      - -c
+      - timescaledb.telemetry_level=off
+      - -c
+      - pg_stat_statements.track=all
+      - -c
+      - pg_stat_statements.max=10000
+      - -c
+      - track_io_timing=on
+      - -c
+      - track_functions=pl
+    restart: unless-stopped
+    stop_grace_period: 1m
+
+  crypto-scout-analyst-backup:
+    image: prodrigestivill/postgres-backup-local:latest
+    container_name: crypto-scout-analyst-db-backups
+    restart: unless-stopped
+    env_file:
+      - ./secret/postgres-backup.env
+    environment:
+      TZ: UTC
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      - crypto-scout-analyst-db
+    networks:
+      - crypto-scout-bridge
+
+  crypto-scout-analyst:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: crypto-scout-analyst:0.0.1
+    container_name: crypto-scout-analyst
+    cpus: "1.00"
+    memory: 1G
+    env_file:
+      - ./secret/analyst.env
+    environment:
+      TZ: UTC
+    networks:
+      - crypto-scout-bridge
+    ports:
+      - "8082:8082"
+    depends_on:
+      - crypto-scout-analyst-db
+      - crypto-scout-analyst-backup
+    security_opt:
+      - no-new-privileges=true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,size=64m,mode=1777,nodev,nosuid
+    cap_drop:
+      - ALL
+    user: "10001:10001"
+    init: true
+    pids_limit: 256
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 4096
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8082/health || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+networks:
+  crypto-scout-bridge:
+    name: crypto-scout-bridge
+    external: true
