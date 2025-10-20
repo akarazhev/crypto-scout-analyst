@@ -56,7 +56,7 @@ public final class AnalystModule extends AbstractModule {
     }
 
     @Provides
-    private CryptoBybitAnalyst cryptoBybitCollector(final NioReactor reactor, final Executor executor,
+    private CryptoBybitAnalyst cryptoBybitAnalyst(final NioReactor reactor, final Executor executor,
                                                     final StreamOffsetsRepository streamOffsetsRepository) {
         return CryptoBybitAnalyst.create(reactor, executor, streamOffsetsRepository);
     }
