@@ -85,7 +85,7 @@ public final class AmqpClient extends AbstractReactive implements ReactiveServic
                         .build();
                 consumer = environment.consumerBuilder()
                         .stream(cryptoBybitStream)
-                        .noTrackingStrategy()
+                        .noTrackingStrategy() // todo: implement filter
                         .subscriptionListener(c -> updateOffset(cryptoBybitStream, c))
                         .messageHandler((c, m) -> consumePayload(cryptoBybitTaStream, c, m))
                         .build();
@@ -149,7 +149,7 @@ public final class AmqpClient extends AbstractReactive implements ReactiveServic
     public Promise<?> publish(final Payload<Map<String, Object>> payload) {
         final var provider = payload.getProvider();
         final var source = payload.getSource();
-        if (!Provider.JCRYPTOLIB.equals(provider)) {
+        if (!Provider.BYBIT_TA.equals(provider)) {
             LOGGER.debug("Skipping publish: no stream route for provider={} source={}", provider, source);
             return Promise.of(null);
         }
@@ -157,7 +157,7 @@ public final class AmqpClient extends AbstractReactive implements ReactiveServic
         final var settablePromise = new SettablePromise<Void>();
         try {
             final var message = producer.messageBuilder()
-                    .addData(JsonUtils.object2Bytes(payload))
+                    .addData(JsonUtils.object2Bytes(payload)) // todo: may be implement it as a blocking call
                     .build();
             producer.send(message, confirmationStatus ->
                     reactor.execute(() -> {

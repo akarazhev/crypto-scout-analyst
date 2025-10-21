@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 
 public final class CryptoBybitAnalyst extends AbstractReactive implements ReactiveService {
@@ -61,14 +62,12 @@ public final class CryptoBybitAnalyst extends AbstractReactive implements Reacti
         return Promise.complete();
     }
 
-    public Promise<?> analyze(final Payload<Map<String, Object>> payload) {
+    public Promise<Payload<Map<String, Object>>> analyze(final Payload<Map<String, Object>> payload) {
         if (!Provider.BYBIT.equals(payload.getProvider())) {
             LOGGER.warn("Invalid payload: {}", payload);
-            return Promise.complete();
+            return Promise.ofOptional(Optional.empty());
         }
-
-        return Promise.ofBlocking(executor, () -> {
-            // todo: analyze payload
-        });
+        // TODO: implement analysis
+        return Promise.of(Payload.of(Provider.BYBIT_TA, payload.getSource(), payload.getData()));
     }
 }
