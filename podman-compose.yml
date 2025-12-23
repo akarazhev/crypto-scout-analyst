@@ -1,21 +1,18 @@
-version: "3.9"
-
 services:
   crypto-scout-analyst-db:
     image: timescale/timescaledb:latest-pg17
     container_name: crypto-scout-analyst-db
-    cpus: "2.00"
-    memory: 8G
+    cpus: "1.0"
+    mem_limit: "256m"
+    mem_reservation: "128m"
     shm_size: "1g"
     ulimits:
       nofile:
         soft: 262144
         hard: 262144
-    ports:
-      - "5432:5432"
     volumes:
       - ./data/postgresql:/var/lib/postgresql/data
-      - ./script/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./script/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
     networks:
       - crypto-scout-bridge
     env_file:
@@ -78,6 +75,9 @@ services:
   crypto-scout-analyst-backup:
     image: prodrigestivill/postgres-backup-local:latest
     container_name: crypto-scout-analyst-db-backups
+    cpus: "0.5"
+    mem_limit: "256m"
+    mem_reservation: "128m"
     restart: unless-stopped
     env_file:
       - ./secret/postgres-backup.env
@@ -96,19 +96,20 @@ services:
       dockerfile: Dockerfile
     image: crypto-scout-analyst:0.0.1
     container_name: crypto-scout-analyst
-    cpus: "1.00"
-    memory: 1G
+    cpus: "1.0"
+    mem_limit: "512m"
+    mem_reservation: "256m"
     env_file:
       - ./secret/analyst.env
     environment:
       TZ: UTC
     networks:
       - crypto-scout-bridge
-    ports:
-      - "8082:8082"
     depends_on:
-      - crypto-scout-analyst-db
-      - crypto-scout-analyst-backup
+      crypto-scout-analyst-db:
+        condition: service_healthy
+      crypto-scout-analyst-backup:
+        condition: service_started
     security_opt:
       - no-new-privileges=true
     read_only: true
