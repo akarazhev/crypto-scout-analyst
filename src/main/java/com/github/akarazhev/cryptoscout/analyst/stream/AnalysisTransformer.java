@@ -31,6 +31,8 @@ import io.activej.datastream.supplier.StreamDataAcceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 public final class AnalysisTransformer extends AbstractStreamTransformer<StreamPayload, StreamPayload> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AnalysisTransformer.class);
 
@@ -40,16 +42,31 @@ public final class AnalysisTransformer extends AbstractStreamTransformer<StreamP
             try {
                 final var payload = in.payload();
                 if (payload == null || !Provider.BYBIT.equals(payload.getProvider())) {
-                    // Not BYBIT: we still want to commit offset downstream without publishing
+                    // Not BYBIT: commit offset downstream without publishing
                     output.accept(new StreamPayload(in.stream(), in.offset(), null));
-                } else {
-                    // Stub analysis: pass-through data and mark provider as BYBIT_TA
-                    final var analyzed = Payload.of(Provider.BYBIT_TA, payload.getSource(), payload.getData());
-                    output.accept(new StreamPayload(in.stream(), in.offset(), analyzed));
+                    return;
                 }
-            } catch (Exception ex) {
-                LOGGER.error("Analysis failed at offset {} for stream {}: {}", in.offset(), in.stream(), ex.getMessage(), ex);
+
+                // Perform analysis - blocking operations should be done in performAnalysis
+                // which runs on virtual thread via executor in the caller (StreamPublisher handles backpressure)
+                final var analyzedData = performAnalysis(payload.getData());
+                final var analyzed = Payload.of(Provider.BYBIT_TA, payload.getSource(), analyzedData);
+                output.accept(new StreamPayload(in.stream(), in.offset(), analyzed));
+            } catch (final Exception ex) {
+                LOGGER.error("Analysis failed at offset {} for stream {}: {}",
+                        in.offset(), in.stream(), ex.getMessage(), ex);
+                // Skip failed message but commit offset
+                output.accept(new StreamPayload(in.stream(), in.offset(), null));
             }
         };
+    }
+
+    private Map<String, Object> performAnalysis(final Map<String, Object> data) {
+        // TODO: Add your blocking analysis logic here
+        // Examples:
+        // - Call external API for technical indicators
+        // - Perform heavy computation
+        // - Query database for historical data
+        return data;
     }
 }
