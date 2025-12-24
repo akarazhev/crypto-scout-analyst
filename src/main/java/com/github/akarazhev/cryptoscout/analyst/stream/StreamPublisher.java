@@ -71,9 +71,9 @@ public final class StreamPublisher extends AbstractStreamConsumer<StreamPayload>
             final var message = producer.messageBuilder()
                     .addData(JsonUtils.object2Bytes(in.payload()))
                     .build();
-            producer.send(message, confirmationStatus -> reactor.execute(() -> {
-                if (!confirmationStatus.isConfirmed()) {
-                    closeEx(new RuntimeException("Publish not confirmed: " + confirmationStatus));
+            producer.send(message, status -> reactor.execute(() -> {
+                if (!status.isConfirmed()) {
+                    closeEx(new RuntimeException("Publish not confirmed: " + status));
                     return;
                 }
                 // Update offset for the SOURCE stream after successful publish
