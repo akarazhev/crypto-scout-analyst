@@ -72,40 +72,32 @@ public final class StreamService extends AbstractReactive implements ReactiveSer
 
     @Override
     public Promise<?> start() {
-        try {
-            final var bybitStream = AmqpConfig.getAmqpBybitStream();
-            final var bybitTaStream = AmqpConfig.getAmqpBybitTaStream();
-            // 1) Create RMQ environment + producer in blocking executor
-            return Promise.ofBlocking(executor, () -> {
-                        environment = AmqpConfig.getEnvironment();
-                        bybitStreamTaProducer = environment.producerBuilder()
-                                .name(bybitTaStream)
-                                .stream(bybitTaStream)
-                                .build();
-                        return Promise.complete();
-                    })
-                    // 2) Build ActiveJ datastream pipeline on reactor thread
-                    .then(() -> {
-                        messageSupplier = new MessageSupplier();
-                        messageSupplier.transformWith(new BytesToPayloadTransformer())
-                                .transformWith(new AnalysisTransformer())
-                                .streamTo(new StreamPublisher(bybitStreamTaProducer, streamOffsetsRepository, executor));
-                        return Promise.complete();
-                    })
+        final var bybitStream = AmqpConfig.getAmqpBybitStream();
+        final var bybitTaStream = AmqpConfig.getAmqpBybitTaStream();
+        // 1) Create RMQ environment + producer in blocking executor
+        return Promise.ofBlocking(executor, () -> {
+                    environment = AmqpConfig.getEnvironment();
+                    bybitStreamTaProducer = environment.producerBuilder()
+                            .name(bybitTaStream)
+                            .stream(bybitTaStream)
+                            .build();
+                })
+                // 2) Build ActiveJ datastream pipeline on reactor thread
+                .then(() -> {
+                    messageSupplier = new MessageSupplier();
+                    messageSupplier.transformWith(new BytesToPayloadTransformer())
+                            .transformWith(new AnalysisTransformer())
+                            .streamTo(new StreamPublisher(bybitStreamTaProducer, streamOffsetsRepository, executor));
                     // 3) Create RMQ consumer in blocking executor
-                    .then(() -> Promise.ofBlocking(executor, () -> {
+                    return Promise.ofBlocking(executor, () -> {
                         bybitStreamConsumer = environment.consumerBuilder()
                                 .stream(bybitStream)
                                 .noTrackingStrategy()
                                 .subscriptionListener(c -> updateOffset(bybitStream, c))
                                 .messageHandler((c, m) -> onMessage(bybitStream, c, m))
                                 .build();
-                        return Promise.complete();
-                    }));
-        } catch (final Exception ex) {
-            LOGGER.error("Failed to start AmqpClient", ex);
-            return Promise.ofException(ex);
-        }
+                    });
+                });
     }
 
     @Override
