@@ -24,7 +24,7 @@
 
 package com.github.akarazhev.cryptoscout.module;
 
-import com.github.akarazhev.cryptoscout.analyst.CryptoBybitAnalyst;
+import com.github.akarazhev.cryptoscout.analyst.StreamService;
 import com.github.akarazhev.cryptoscout.analyst.db.AnalystDataSource;
 import com.github.akarazhev.cryptoscout.analyst.db.StreamOffsetsRepository;
 import io.activej.inject.annotation.Eager;
@@ -56,8 +56,8 @@ public final class AnalystModule extends AbstractModule {
 
     @Provides
     @Eager
-    private CryptoBybitAnalyst cryptoBybitAnalyst(final NioReactor reactor, final Executor executor,
-                                                  final StreamOffsetsRepository streamOffsetsRepository) {
-        return CryptoBybitAnalyst.create(reactor, executor, streamOffsetsRepository);
+    private StreamService streamService(final NioReactor reactor, final Executor executor,
+                                        final StreamOffsetsRepository streamOffsetsRepository) {
+        return StreamService.create(reactor, executor, streamOffsetsRepository);
     }
 }
