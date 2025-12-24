@@ -42,7 +42,12 @@ public final class StreamPublisher extends AbstractStreamConsumer<StreamPayload>
     private final Executor executor;
     private StreamDataAcceptor<StreamPayload> acceptor;
 
-    public StreamPublisher(final Producer producer, final StreamOffsetsRepository offsetsRepository,
+    public static StreamPublisher create(final Producer producer, final StreamOffsetsRepository offsetsRepository,
+                                         final Executor executor) {
+        return new StreamPublisher(producer, offsetsRepository, executor);
+    }
+
+    private StreamPublisher(final Producer producer, final StreamOffsetsRepository offsetsRepository,
                            final Executor executor) {
         this.producer = producer;
         this.offsetsRepository = offsetsRepository;

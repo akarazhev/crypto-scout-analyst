@@ -31,6 +31,14 @@ import org.slf4j.LoggerFactory;
 public final class MessageSupplier extends AbstractStreamSupplier<StreamIn> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageSupplier.class);
 
+    public static MessageSupplier create() {
+        return new MessageSupplier();
+    }
+
+    private MessageSupplier() {
+        super();
+    }
+
     public void enqueue(final String stream, final long offset, final byte[] body) {
         // Ensure we schedule send on reactor thread
         if (reactor.inReactorThread()) {

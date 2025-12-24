@@ -37,6 +37,14 @@ import java.util.Map;
 public final class BytesToPayloadTransformer extends AbstractStreamTransformer<StreamIn, StreamPayload> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BytesToPayloadTransformer.class);
 
+    public static BytesToPayloadTransformer create() {
+        return new BytesToPayloadTransformer();
+    }
+
+    private BytesToPayloadTransformer() {
+        super();
+    }
+
     @Override
     protected StreamDataAcceptor<StreamIn> onResumed(final StreamDataAcceptor<StreamPayload> output) {
         return in -> {

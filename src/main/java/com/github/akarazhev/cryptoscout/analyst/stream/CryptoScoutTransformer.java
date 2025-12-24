@@ -35,6 +35,14 @@ import java.util.Map;
 public final class CryptoScoutTransformer extends AbstractStreamTransformer<StreamPayload, StreamPayload> {
     private static final Logger LOGGER = LoggerFactory.getLogger(CryptoScoutTransformer.class);
 
+    private CryptoScoutTransformer() {
+        super();
+    }
+
+    public static CryptoScoutTransformer create() {
+        return new CryptoScoutTransformer();
+    }
+
     @Override
     protected StreamDataAcceptor<StreamPayload> onResumed(final StreamDataAcceptor<StreamPayload> output) {
         return in -> {
