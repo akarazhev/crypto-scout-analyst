@@ -56,7 +56,7 @@ final class Constants {
             throw new UnsupportedOperationException();
         }
 
-        static final String POOL_NAME = "crypto-scout-collector-pool";
+        static final String POOL_NAME = "crypto-scout-analyst-pool";
         static final String JDBC_URL = "jdbc.datasource.url";
         static final String JDBC_USERNAME = "jdbc.datasource.username";
         static final String JDBC_PASSWORD = "jdbc.datasource.password";

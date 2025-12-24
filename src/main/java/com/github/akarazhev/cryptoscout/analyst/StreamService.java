@@ -96,7 +96,7 @@ public final class StreamService extends AbstractReactive implements ReactiveSer
                     .then(() -> Promise.ofBlocking(executor, () -> {
                         bybitStreamConsumer = environment.consumerBuilder()
                                 .stream(bybitStream)
-                                .noTrackingStrategy() // TODO: consider credit/backpressure configuration
+                                .noTrackingStrategy()
                                 .subscriptionListener(c -> updateOffset(bybitStream, c))
                                 .messageHandler((c, m) -> onMessage(bybitStream, c, m))
                                 .build();
