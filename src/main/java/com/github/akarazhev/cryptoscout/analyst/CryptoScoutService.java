@@ -79,10 +79,10 @@ public final class CryptoScoutService extends AbstractReactive implements Reacti
                             .build();
                 })
                 .then(() -> {
-                    messageSupplier = new MessageSupplier();
-                    messageSupplier.transformWith(new BytesToPayloadTransformer())
-                            .transformWith(new CryptoScoutTransformer())
-                            .streamTo(new StreamPublisher(producer, streamOffsetsRepository, executor));
+                    messageSupplier = MessageSupplier.create();
+                    messageSupplier.transformWith(BytesToPayloadTransformer.create())
+                            .transformWith(CryptoScoutTransformer.create())
+                            .streamTo(StreamPublisher.create(producer, streamOffsetsRepository, executor));
                     return Promise.ofBlocking(executor, () -> {
                         consumer = environment.consumerBuilder()
                                 .stream(stream)
