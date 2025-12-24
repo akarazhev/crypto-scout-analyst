@@ -160,8 +160,9 @@ public final class BybitStreamService extends AbstractReactive implements Reacti
     }
 
     private void stopPipeline() {
-        if (messageSupplier != null) {
-            reactor.execute(() -> messageSupplier.sendEndOfStream());
+        final var supplier = messageSupplier;
+        if (supplier != null) {
+            reactor.execute(supplier::sendEndOfStream);
             messageSupplier = null;
         }
     }
