@@ -38,7 +38,7 @@ Take the following roles:
 
 ### Summary
 
-- **Refactored** `com.github.akarazhev.cryptoscout.analyst.CryptoBybitAnalyst` to process RabbitMQ Streams using an *
+- **Refactored** `com.github.akarazhev.cryptoscout.analyst.StreamService` to process RabbitMQ Streams using an *
   *ActiveJ Datastream** pipeline and to publish analysis results back to RabbitMQ Streams.
 - **Tracked offsets** in PostgreSQL via `StreamOffsetsRepository`, resuming from the saved offset on startup, and
   committing offsets after successful processing.
