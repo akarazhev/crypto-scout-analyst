@@ -25,8 +25,9 @@
 package com.github.akarazhev.cryptoscout.analyst;
 
 import com.github.akarazhev.cryptoscout.analyst.db.StreamOffsetsRepository;
-import com.github.akarazhev.cryptoscout.analyst.stream.AnalysisTransformer;
+import com.github.akarazhev.cryptoscout.analyst.stream.BybitTransformer;
 import com.github.akarazhev.cryptoscout.analyst.stream.BytesToPayloadTransformer;
+import com.github.akarazhev.cryptoscout.analyst.stream.CryptoScoutTransformer;
 import com.github.akarazhev.cryptoscout.analyst.stream.MessageSupplier;
 import com.github.akarazhev.cryptoscout.analyst.stream.StreamPublisher;
 
@@ -56,7 +57,10 @@ public final class StreamService extends AbstractReactive implements ReactiveSer
     private volatile Environment environment;
     private volatile Consumer bybitStreamConsumer;
     private volatile Producer bybitStreamTaProducer;
-    private volatile MessageSupplier messageSupplier;
+    private volatile MessageSupplier bybitMessageSupplier;
+    private volatile Consumer cryptoScoutStreamConsumer;
+    private volatile Producer cryptoScoutStreamProducer;
+    private volatile MessageSupplier cryptoScoutMessageSupplier;
 
     public static StreamService create(final NioReactor reactor, final Executor executor,
                                        final StreamOffsetsRepository streamOffsetsRepository) {
@@ -74,27 +78,44 @@ public final class StreamService extends AbstractReactive implements ReactiveSer
     public Promise<?> start() {
         final var bybitStream = AmqpConfig.getAmqpBybitStream();
         final var bybitTaStream = AmqpConfig.getAmqpBybitTaStream();
-        // 1) Create RMQ environment + producer in blocking executor
+        final var cryptoScoutStream = AmqpConfig.getAmqpCryptoScoutStream();
+        // 1) Create RMQ environment + producers in blocking executor
         return Promise.ofBlocking(executor, () -> {
                     environment = AmqpConfig.getEnvironment();
                     bybitStreamTaProducer = environment.producerBuilder()
                             .name(bybitTaStream)
                             .stream(bybitTaStream)
                             .build();
+                    cryptoScoutStreamProducer = environment.producerBuilder()
+                            .name(cryptoScoutStream)
+                            .stream(cryptoScoutStream)
+                            .build();
                 })
-                // 2) Build ActiveJ datastream pipeline on reactor thread
+                // 2) Build ActiveJ datastream pipelines on reactor thread
                 .then(() -> {
-                    messageSupplier = new MessageSupplier();
-                    messageSupplier.transformWith(new BytesToPayloadTransformer())
-                            .transformWith(new AnalysisTransformer())
+                    // Bybit stream pipeline
+                    bybitMessageSupplier = new MessageSupplier();
+                    bybitMessageSupplier.transformWith(new BytesToPayloadTransformer())
+                            .transformWith(new BybitTransformer())
                             .streamTo(new StreamPublisher(bybitStreamTaProducer, streamOffsetsRepository, executor));
-                    // 3) Create RMQ consumer in blocking executor
+                    // Crypto Scout stream pipeline
+                    cryptoScoutMessageSupplier = new MessageSupplier();
+                    cryptoScoutMessageSupplier.transformWith(new BytesToPayloadTransformer())
+                            .transformWith(new CryptoScoutTransformer())
+                            .streamTo(new StreamPublisher(cryptoScoutStreamProducer, streamOffsetsRepository, executor));
+                    // 3) Create RMQ consumers in blocking executor
                     return Promise.ofBlocking(executor, () -> {
                         bybitStreamConsumer = environment.consumerBuilder()
                                 .stream(bybitStream)
                                 .noTrackingStrategy()
                                 .subscriptionListener(c -> updateOffset(bybitStream, c))
-                                .messageHandler((c, m) -> onMessage(bybitStream, c, m))
+                                .messageHandler((c, m) -> onBybitMessage(bybitStream, c, m))
+                                .build();
+                        cryptoScoutStreamConsumer = environment.consumerBuilder()
+                                .stream(cryptoScoutStream)
+                                .noTrackingStrategy()
+                                .subscriptionListener(c -> updateOffset(cryptoScoutStream, c))
+                                .messageHandler((c, m) -> onCryptoScoutMessage(cryptoScoutStream, c, m))
                                 .build();
                     });
                 });
@@ -105,12 +126,20 @@ public final class StreamService extends AbstractReactive implements ReactiveSer
         return Promise.ofBlocking(executor, () -> {
             closeConsumer(bybitStreamConsumer);
             bybitStreamConsumer = null;
+            closeConsumer(cryptoScoutStreamConsumer);
+            cryptoScoutStreamConsumer = null;
             closeProducer(bybitStreamTaProducer);
             bybitStreamTaProducer = null;
-            // Gracefully stop datastream pipeline
-            if (messageSupplier != null) {
-                reactor.execute(() -> messageSupplier.sendEndOfStream());
-                messageSupplier = null;
+            closeProducer(cryptoScoutStreamProducer);
+            cryptoScoutStreamProducer = null;
+            // Gracefully stop datastream pipelines
+            if (bybitMessageSupplier != null) {
+                reactor.execute(() -> bybitMessageSupplier.sendEndOfStream());
+                bybitMessageSupplier = null;
+            }
+            if (cryptoScoutMessageSupplier != null) {
+                reactor.execute(() -> cryptoScoutMessageSupplier.sendEndOfStream());
+                cryptoScoutMessageSupplier = null;
             }
 
             closeEnvironment();
@@ -139,13 +168,23 @@ public final class StreamService extends AbstractReactive implements ReactiveSer
         );
     }
 
-    private void onMessage(final String sourceStream, final MessageHandler.Context context, final Message message) {
-        // Push to datastream supplier; offset will be stored after publish in the pipeline
+    private void onBybitMessage(final String sourceStream, final MessageHandler.Context context, final Message message) {
+        // Push to bybit datastream supplier; offset will be stored after publish in the pipeline
         try {
             final var body = message.getBodyAsBinary();
-            messageSupplier.enqueue(sourceStream, context.offset(), body);
+            bybitMessageSupplier.enqueue(sourceStream, context.offset(), body);
         } catch (final Exception ex) {
-            LOGGER.error("Failed to enqueue stream message: {}", ex.getMessage(), ex);
+            LOGGER.error("Failed to enqueue bybit stream message: {}", ex.getMessage(), ex);
+        }
+    }
+
+    private void onCryptoScoutMessage(final String sourceStream, final MessageHandler.Context context, final Message message) {
+        // Push to crypto scout datastream supplier; offset will be stored after publish in the pipeline
+        try {
+            final var body = message.getBodyAsBinary();
+            cryptoScoutMessageSupplier.enqueue(sourceStream, context.offset(), body);
+        } catch (final Exception ex) {
+            LOGGER.error("Failed to enqueue crypto scout stream message: {}", ex.getMessage(), ex);
         }
     }
 
