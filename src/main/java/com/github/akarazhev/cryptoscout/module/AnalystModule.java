@@ -44,7 +44,7 @@ public final class AnalystModule extends AbstractModule {
     }
 
     @Provides
-    private AnalystDataSource jdbcDataSource(final NioReactor reactor, final Executor executor) {
+    private AnalystDataSource analystDataSource(final NioReactor reactor, final Executor executor) {
         return AnalystDataSource.create(reactor, executor);
     }
 
