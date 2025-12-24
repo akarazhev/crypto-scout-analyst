@@ -49,13 +49,13 @@ public final class StreamService extends AbstractReactive implements ReactiveSer
     }
 
     @Override
-    public Promise<?> start() {
+    public Promise<Void> start() {
         return bybitStreamService.start()
                 .then(cryptoScoutService::start);
     }
 
     @Override
-    public Promise<?> stop() {
+    public Promise<Void> stop() {
         return bybitStreamService.stop()
                 .then(cryptoScoutService::stop);
     }

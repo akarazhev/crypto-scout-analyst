@@ -72,7 +72,7 @@ public final class BybitStreamService extends AbstractReactive implements Reacti
     }
 
     @Override
-    public Promise<?> start() {
+    public Promise<Void> start() {
         return Promise.ofBlocking(executor, () -> {
                     environment = AmqpConfig.getEnvironment();
                     producer = environment.producerBuilder()
@@ -97,7 +97,7 @@ public final class BybitStreamService extends AbstractReactive implements Reacti
     }
 
     @Override
-    public Promise<?> stop() {
+    public Promise<Void> stop() {
         return Promise.ofBlocking(executor, () -> {
             closeConsumer();
             closeProducer();

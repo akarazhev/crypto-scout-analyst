@@ -49,7 +49,7 @@ public final class AnalystDataSource extends AbstractReactive implements Reactiv
     }
 
     @Override
-    public Promise<?> start() {
+    public Promise<Void> start() {
         return Promise.complete();
     }
 
@@ -58,7 +58,7 @@ public final class AnalystDataSource extends AbstractReactive implements Reactiv
     }
 
     @Override
-    public Promise<?> stop() {
+    public Promise<Void> stop() {
         return Promise.ofBlocking(executor, () -> {
             if (dataSource.isRunning()) {
                 dataSource.close();
