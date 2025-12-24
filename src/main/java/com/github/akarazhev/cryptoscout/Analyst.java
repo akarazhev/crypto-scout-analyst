@@ -24,6 +24,7 @@
 
 package com.github.akarazhev.cryptoscout;
 
+import com.github.akarazhev.cryptoscout.config.ConfigValidator;
 import com.github.akarazhev.cryptoscout.module.AnalystModule;
 import com.github.akarazhev.cryptoscout.module.CoreModule;
 import com.github.akarazhev.cryptoscout.module.WebModule;
@@ -44,6 +45,11 @@ public final class Analyst extends Launcher {
                 CoreModule.create(),
                 AnalystModule.create(),
                 WebModule.create());
+    }
+
+    @Override
+    protected void onStart() throws Exception {
+        ConfigValidator.validate();
     }
 
     @Override
