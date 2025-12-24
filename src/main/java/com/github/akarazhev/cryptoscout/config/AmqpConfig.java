@@ -25,38 +25,39 @@
 package com.github.akarazhev.cryptoscout.config;
 
 import com.github.akarazhev.jcryptolib.config.AppConfig;
-import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.stream.Environment;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
-import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_CHAT_BOT_EXCHANGE;
-import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_CHAT_BOT_QUEUE;
-import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_CRYPTO_BYBIT_TA_STREAM;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_ANALYST_QUEUE;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_ANALYST_ROUTING_KEY;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_BYBIT_STREAM;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_BYBIT_TA_STREAM;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_CHATBOT_QUEUE;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_CHATBOT_ROUTING_KEY;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_COLLECTOR_QUEUE;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_COLLECTOR_ROUTING_KEY;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_CRYPTO_SCOUT_EXCHANGE;
+import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_CRYPTO_SCOUT_STREAM;
 import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_RABBITMQ_HOST;
 import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_RABBITMQ_PASSWORD;
 import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_RABBITMQ_PORT;
 import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_RABBITMQ_USERNAME;
-import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_CRYPTO_BYBIT_STREAM;
 import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_STREAM_PORT;
-import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.CONNECTION_NAME;
 
 public final class AmqpConfig {
     private AmqpConfig() {
         throw new UnsupportedOperationException();
     }
 
-    public static String getAmqpRabbitmqHost() {
+    private static String getAmqpRabbitmqHost() {
         return AppConfig.getAsString(AMQP_RABBITMQ_HOST);
     }
 
-    public static String getAmqpRabbitmqUsername() {
+    private static String getAmqpRabbitmqUsername() {
         return AppConfig.getAsString(AMQP_RABBITMQ_USERNAME);
     }
 
-    public static String getAmqpRabbitmqPassword() {
+    private static String getAmqpRabbitmqPassword() {
         return AppConfig.getAsString(AMQP_RABBITMQ_PASSWORD);
     }
 
@@ -64,33 +65,57 @@ public final class AmqpConfig {
         return AppConfig.getAsInt(AMQP_STREAM_PORT);
     }
 
-    public static String getAmqpCryptoBybitStream() {
-        return AppConfig.getAsString(AMQP_CRYPTO_BYBIT_STREAM);
+    public static String getAmqpBybitStream() {
+        return AppConfig.getAsString(AMQP_BYBIT_STREAM);
     }
 
-    public static String getAmqpCryptoBybitTaStream() {
-        return AppConfig.getAsString(AMQP_CRYPTO_BYBIT_TA_STREAM);
+    private static String getAmqpBybitTaStream() {
+        return AppConfig.getAsString(AMQP_BYBIT_TA_STREAM);
     }
 
-    public static String getAmqpChatBotExchange() {
-        return AppConfig.getAsString(AMQP_CHAT_BOT_EXCHANGE);
+    public static String getAmqpCryptoScoutStream() {
+        return AppConfig.getAsString(AMQP_CRYPTO_SCOUT_STREAM);
     }
 
-    public static String getAmqpChatBotQueue() {
-        return AppConfig.getAsString(AMQP_CHAT_BOT_QUEUE);
+    public static String getAmqpCryptoScoutExchange() {
+        return AppConfig.getAsString(AMQP_CRYPTO_SCOUT_EXCHANGE);
     }
 
-    public static int getAmqpRabbitmqPort() {
+    public static String getAmqpCollectorRoutingKey() {
+        return AppConfig.getAsString(AMQP_COLLECTOR_ROUTING_KEY);
+    }
+
+    public static String getAmqpCollectorQueue() {
+        return AppConfig.getAsString(AMQP_COLLECTOR_QUEUE);
+    }
+
+    public static String getAmqpChatbotQueue() {
+        return AppConfig.getAsString(AMQP_CHATBOT_QUEUE);
+    }
+
+    public static String getAmqpChatbotRoutingKey() {
+        return AppConfig.getAsString(AMQP_CHATBOT_ROUTING_KEY);
+    }
+
+    public static String getAmqpAnalystQueue() {
+        return AppConfig.getAsString(AMQP_ANALYST_QUEUE);
+    }
+
+    public static String getAmqpAnalystRoutingKey() {
+        return AppConfig.getAsString(AMQP_ANALYST_ROUTING_KEY);
+    }
+
+    private static int getAmqpRabbitmqPort() {
         return AppConfig.getAsInt(AMQP_RABBITMQ_PORT);
     }
 
-    public static Connection getConnection() throws IOException, TimeoutException {
+    public static ConnectionFactory getConnectionFactory() {
         final var factory = new ConnectionFactory();
         factory.setHost(AmqpConfig.getAmqpRabbitmqHost());
         factory.setPort(AmqpConfig.getAmqpRabbitmqPort());
         factory.setUsername(AmqpConfig.getAmqpRabbitmqUsername());
         factory.setPassword(AmqpConfig.getAmqpRabbitmqPassword());
-        return factory.newConnection(CONNECTION_NAME);
+        return factory;
     }
 
     public static Environment getEnvironment() {

@@ -34,15 +34,20 @@ final class Constants {
             throw new UnsupportedOperationException();
         }
 
-        static final String CONNECTION_NAME = "crypto-scout-analyst";
         static final String AMQP_RABBITMQ_HOST = "amqp.rabbitmq.host";
         static final String AMQP_RABBITMQ_USERNAME = "amqp.rabbitmq.username";
         static final String AMQP_RABBITMQ_PASSWORD = "amqp.rabbitmq.password";
         static final String AMQP_STREAM_PORT = "amqp.stream.port";
-        static final String AMQP_CRYPTO_BYBIT_STREAM = "amqp.crypto.bybit.stream";
-        static final String AMQP_CRYPTO_BYBIT_TA_STREAM = "amqp.crypto.bybit.ta.stream";
-        static final String AMQP_CHAT_BOT_EXCHANGE = "amqp.chatbot.exchange";
-        static final String AMQP_CHAT_BOT_QUEUE = "amqp.chatbot.queue";
+        static final String AMQP_BYBIT_STREAM = "amqp.bybit.stream";
+        static final String AMQP_BYBIT_TA_STREAM = "amqp.bybit.ta.stream";
+        static final String AMQP_CRYPTO_SCOUT_STREAM = "amqp.crypto.scout.stream";
+        static final String AMQP_CRYPTO_SCOUT_EXCHANGE = "amqp.crypto.scout.exchange";
+        static final String AMQP_COLLECTOR_ROUTING_KEY = "amqp.collector.routing.key";
+        static final String AMQP_COLLECTOR_QUEUE = "amqp.collector.queue";
+        static final String AMQP_CHATBOT_QUEUE = "amqp.chatbot.queue";
+        static final String AMQP_CHATBOT_ROUTING_KEY = "amqp.chatbot.routing.key";
+        static final String AMQP_ANALYST_QUEUE = "amqp.analyst.queue";
+        static final String AMQP_ANALYST_ROUTING_KEY = "amqp.analyst.routing.key";
         static final String AMQP_RABBITMQ_PORT = "amqp.rabbitmq.port";
     }
 
@@ -51,7 +56,7 @@ final class Constants {
             throw new UnsupportedOperationException();
         }
 
-        static final String POOL_NAME = "crypto-scout-analyst-pool";
+        static final String POOL_NAME = "crypto-scout-collector-pool";
         static final String JDBC_URL = "jdbc.datasource.url";
         static final String JDBC_USERNAME = "jdbc.datasource.username";
         static final String JDBC_PASSWORD = "jdbc.datasource.password";
