@@ -24,15 +24,29 @@
 
 package com.github.akarazhev.cryptoscout.module;
 
+import com.github.akarazhev.cryptoscout.analyst.AmqpConsumer;
+import com.github.akarazhev.cryptoscout.analyst.AmqpPublisher;
+import com.github.akarazhev.cryptoscout.analyst.BybitStreamService;
+import com.github.akarazhev.cryptoscout.analyst.CryptoScoutService;
+import com.github.akarazhev.cryptoscout.analyst.DataService;
 import com.github.akarazhev.cryptoscout.analyst.StreamService;
 import com.github.akarazhev.cryptoscout.analyst.db.AnalystDataSource;
 import com.github.akarazhev.cryptoscout.analyst.db.StreamOffsetsRepository;
+import com.github.akarazhev.cryptoscout.config.AmqpConfig;
 import io.activej.inject.annotation.Eager;
+import io.activej.inject.annotation.Named;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import io.activej.reactor.nio.NioReactor;
 
 import java.util.concurrent.Executor;
+
+import static com.github.akarazhev.cryptoscout.module.Constants.Config.ANALYST_CONSUMER;
+import static com.github.akarazhev.cryptoscout.module.Constants.Config.ANALYST_CONSUMER_CLIENT_NAME;
+import static com.github.akarazhev.cryptoscout.module.Constants.Config.CHATBOT_PUBLISHER;
+import static com.github.akarazhev.cryptoscout.module.Constants.Config.CHATBOT_PUBLISHER_CLIENT_NAME;
+import static com.github.akarazhev.cryptoscout.module.Constants.Config.COLLECTOR_PUBLISHER;
+import static com.github.akarazhev.cryptoscout.module.Constants.Config.COLLECTOR_PUBLISHER_CLIENT_NAME;
 
 public final class AnalystModule extends AbstractModule {
 
@@ -55,9 +69,55 @@ public final class AnalystModule extends AbstractModule {
     }
 
     @Provides
+    private BybitStreamService bybitStreamService(final NioReactor reactor, final Executor executor,
+                                                  final StreamOffsetsRepository streamOffsetsRepository) {
+        return BybitStreamService.create(reactor, executor, streamOffsetsRepository);
+    }
+
+    @Provides
+    private CryptoScoutService cryptoScoutService(final NioReactor reactor, final Executor executor,
+                                                  final StreamOffsetsRepository streamOffsetsRepository) {
+        return CryptoScoutService.create(reactor, executor, streamOffsetsRepository);
+    }
+
+    @Provides
+    private DataService dataService(final NioReactor reactor,
+                                    final BybitStreamService bybitStreamService,
+                                    final CryptoScoutService cryptoScoutService,
+                                    @Named(CHATBOT_PUBLISHER) final AmqpPublisher chatbotPublisher,
+                                    @Named(COLLECTOR_PUBLISHER) final AmqpPublisher collectorPublisher) {
+        return DataService.create(reactor, bybitStreamService, cryptoScoutService, chatbotPublisher, collectorPublisher);
+    }
+
+    @Provides
     @Eager
-    private StreamService streamService(final NioReactor reactor, final Executor executor,
-                                        final StreamOffsetsRepository streamOffsetsRepository) {
-        return StreamService.create(reactor, executor, streamOffsetsRepository);
+    private StreamService streamService(final NioReactor reactor, final BybitStreamService bybitStreamService,
+                                        final CryptoScoutService cryptoScoutService) {
+        return StreamService.create(reactor, bybitStreamService, cryptoScoutService);
+    }
+
+    @Provides
+    @Named(CHATBOT_PUBLISHER)
+    @Eager
+    private AmqpPublisher chatbotPublisher(final NioReactor reactor, final Executor executor) {
+        return AmqpPublisher.create(reactor, executor, AmqpConfig.getConnectionFactory(), CHATBOT_PUBLISHER_CLIENT_NAME,
+                AmqpConfig.getAmqpChatbotQueue());
+    }
+
+    @Provides
+    @Named(COLLECTOR_PUBLISHER)
+    @Eager
+    private AmqpPublisher collectorPublisher(final NioReactor reactor, final Executor executor) {
+        return AmqpPublisher.create(reactor, executor, AmqpConfig.getConnectionFactory(), COLLECTOR_PUBLISHER_CLIENT_NAME,
+                AmqpConfig.getAmqpAnalystQueue());
+    }
+
+    @Provides
+    @Named(ANALYST_CONSUMER)
+    @Eager
+    private AmqpConsumer analystConsumer(final NioReactor reactor, final Executor executor,
+                                         final DataService dataService) {
+        return AmqpConsumer.create(reactor, executor, AmqpConfig.getConnectionFactory(), ANALYST_CONSUMER_CLIENT_NAME,
+                AmqpConfig.getAmqpCollectorQueue(), dataService::consume);
     }
 }

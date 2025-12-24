@@ -24,28 +24,25 @@
 
 package com.github.akarazhev.cryptoscout.analyst;
 
-import com.github.akarazhev.cryptoscout.analyst.db.StreamOffsetsRepository;
 import io.activej.async.service.ReactiveService;
 import io.activej.promise.Promise;
 import io.activej.reactor.AbstractReactive;
 import io.activej.reactor.nio.NioReactor;
 
-import java.util.concurrent.Executor;
-
 public final class StreamService extends AbstractReactive implements ReactiveService {
     private final BybitStreamService bybitStreamService;
     private final CryptoScoutService cryptoScoutService;
 
-    public static StreamService create(final NioReactor reactor, final Executor executor,
-                                       final StreamOffsetsRepository streamOffsetsRepository) {
-        return new StreamService(reactor, executor, streamOffsetsRepository);
+    public static StreamService create(final NioReactor reactor, final BybitStreamService bybitStreamService,
+                                       final CryptoScoutService cryptoScoutService) {
+        return new StreamService(reactor, bybitStreamService, cryptoScoutService);
     }
 
-    private StreamService(final NioReactor reactor, final Executor executor,
-                          final StreamOffsetsRepository streamOffsetsRepository) {
+    private StreamService(final NioReactor reactor, final BybitStreamService bybitStreamService,
+                          final CryptoScoutService cryptoScoutService) {
         super(reactor);
-        this.bybitStreamService = BybitStreamService.create(reactor, executor, streamOffsetsRepository);
-        this.cryptoScoutService = CryptoScoutService.create(reactor, executor, streamOffsetsRepository);
+        this.bybitStreamService = bybitStreamService;
+        this.cryptoScoutService = cryptoScoutService;
     }
 
     @Override
