@@ -36,7 +36,7 @@ import java.util.concurrent.Executor;
 
 public final class AnalystDataSource extends AbstractReactive implements ReactiveService {
     private final Executor executor;
-    private final HikariDataSource dataSource;
+    private volatile HikariDataSource dataSource;
 
     public static AnalystDataSource create(final NioReactor reactor, final Executor executor) {
         return new AnalystDataSource(reactor, executor);
@@ -45,22 +45,27 @@ public final class AnalystDataSource extends AbstractReactive implements Reactiv
     private AnalystDataSource(final NioReactor reactor, final Executor executor) {
         super(reactor);
         this.executor = executor;
-        dataSource = new HikariDataSource(JdbcConfig.getHikariConfig());
     }
 
     @Override
     public Promise<Void> start() {
-        return Promise.complete();
+        return Promise.ofBlocking(executor, () -> {
+            dataSource = new HikariDataSource(JdbcConfig.getHikariConfig());
+        });
     }
 
     public DataSource getDataSource() {
+        if (dataSource == null) {
+            throw new IllegalStateException("DataSource not initialized. Service must be started first.");
+        }
+
         return dataSource;
     }
 
     @Override
     public Promise<Void> stop() {
         return Promise.ofBlocking(executor, () -> {
-            if (dataSource.isRunning()) {
+            if (dataSource != null && dataSource.isRunning()) {
                 dataSource.close();
             }
         });

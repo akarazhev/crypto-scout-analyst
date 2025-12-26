@@ -29,7 +29,6 @@ import io.activej.promise.Promise;
 import io.activej.reactor.AbstractReactive;
 import io.activej.reactor.nio.NioReactor;
 
-import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.OptionalLong;
 
@@ -40,15 +39,15 @@ import static com.github.akarazhev.cryptoscout.analyst.db.Constants.Offsets.STRE
 import static com.github.akarazhev.cryptoscout.analyst.db.Constants.Offsets.STREAM_OFFSETS_UPSERT;
 
 public final class StreamOffsetsRepository extends AbstractReactive implements ReactiveService {
-    private final DataSource dataSource;
+    private final AnalystDataSource analystDataSource;
 
-    private StreamOffsetsRepository(final NioReactor reactor, final DataSource dataSource) {
+    private StreamOffsetsRepository(final NioReactor reactor, final AnalystDataSource analystDataSource) {
         super(reactor);
-        this.dataSource = dataSource;
+        this.analystDataSource = analystDataSource;
     }
 
-    public static StreamOffsetsRepository create(final NioReactor reactor, final DataSource dataSource) {
-        return new StreamOffsetsRepository(reactor, dataSource);
+    public static StreamOffsetsRepository create(final NioReactor reactor, final AnalystDataSource analystDataSource) {
+        return new StreamOffsetsRepository(reactor, analystDataSource);
     }
 
     @Override
@@ -62,7 +61,7 @@ public final class StreamOffsetsRepository extends AbstractReactive implements R
     }
 
     public OptionalLong getOffset(final String stream) throws SQLException {
-        try (final var c = dataSource.getConnection();
+        try (final var c = analystDataSource.getDataSource().getConnection();
              final var ps = c.prepareStatement(STREAM_OFFSETS_SELECT)) {
             ps.setString(STREAM, stream);
             try (final var rs = ps.executeQuery()) {
@@ -79,7 +78,7 @@ public final class StreamOffsetsRepository extends AbstractReactive implements R
     }
 
     public int upsertOffset(final String stream, final long offset) throws SQLException {
-        try (final var c = dataSource.getConnection();
+        try (final var c = analystDataSource.getDataSource().getConnection();
              final var ps = c.prepareStatement(STREAM_OFFSETS_UPSERT)) {
             ps.setString(STREAM, stream);
             ps.setLong(LAST_OFFSET, offset);
