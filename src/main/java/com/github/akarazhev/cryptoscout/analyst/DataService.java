@@ -107,14 +107,97 @@ public final class DataService extends AbstractReactive implements ReactiveServi
 
     private void consume(final Message<List<Map<String, Object>>> message) {
         final var command = message.command();
-        if (command.type() != Message.Type.REQUEST) {
-            LOGGER.debug("Unhandled message type: {}", command.type());
-            return;
-        }
+        switch (command.type()) {
+            case Message.Type.RESPONSE -> {
+                switch (command.method()) {
+                    // CryptoScoutCollector methods
+                    case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
 
-        final var method = command.method();
-        LOGGER.debug("Processing request method: {}", method);
-        objects.addAll(message.value());
+                    case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.CRYPTO_SCOUT_GET_FGI -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    // BybitCryptoCollector methods
+                    case Constants.Method.BYBIT_GET_KLINE_1M -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_KLINE_5M -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_KLINE_15M -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_KLINE_60M -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_KLINE_240M -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_KLINE_1D -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_TICKER -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_ORDER_BOOK_1 -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_ORDER_BOOK_50 -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_ORDER_BOOK_200 -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_ORDER_BOOK_1000 -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_PUBLIC_TRADE -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    case Constants.Method.BYBIT_GET_ALL_LIQUIDATION -> {
+                        final var value = message.value();
+                        objects.addAll(value);
+                    }
+
+                    default -> LOGGER.debug("Unhandled response method: {}", command.method());
+                }
+            }
+
+            default -> LOGGER.debug("Unhandled message type: {}", command.type());
+        }
     }
 
     public void processAsync(final Payload<Map<String, Object>> payload,
