@@ -59,7 +59,10 @@ import static com.github.akarazhev.jcryptolib.util.TimeUtils.tomorrowInUtc;
 
 public final class DataService extends AbstractReactive implements ReactiveService {
     private final static Logger LOGGER = LoggerFactory.getLogger(DataService.class);
-    private final Queue<Map<String, Object>> objects = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> cryptoScoutFgis = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> cryptoScoutKlines1d = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> cryptoScoutKlines1w = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitKlines1m = new ArrayDeque<>();
     private final AmqpPublisher chatbotPublisher;
     private final AmqpPublisher collectorPublisher;
     private final Executor executor;
@@ -77,6 +80,22 @@ public final class DataService extends AbstractReactive implements ReactiveServi
         this.collectorPublisher = collectorPublisher;
     }
 
+    Queue<Map<String, Object>> getCryptoScoutFgis() {
+        return cryptoScoutFgis;
+    }
+
+    Queue<Map<String, Object>> getCryptoScoutKlines1d() {
+        return cryptoScoutKlines1d;
+    }
+
+    Queue<Map<String, Object>> getCryptoScoutKlines1w() {
+        return cryptoScoutKlines1w;
+    }
+
+    Queue<Map<String, Object>> getBybitKlines1m() {
+        return bybitKlines1m;
+    }
+
     @Override
     public Promise<Void> start() {
         final var to = OffsetDateTime.ofInstant(Instant.ofEpochSecond(tomorrowInUtc()), ZoneId.of("UTC"));
@@ -88,7 +107,7 @@ public final class DataService extends AbstractReactive implements ReactiveServi
 
     @Override
     public Promise<Void> stop() {
-        objects.clear();
+        cryptoScoutFgis.clear();
         return Promise.complete();
     }
 
@@ -111,26 +130,11 @@ public final class DataService extends AbstractReactive implements ReactiveServi
             case Message.Type.RESPONSE -> {
                 switch (command.method()) {
                     // CryptoScoutCollector methods
-                    case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.CRYPTO_SCOUT_GET_FGI -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
+                    case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D -> cryptoScoutKlines1d.addAll(message.value());
+                    case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W -> cryptoScoutKlines1w.addAll(message.value());
+                    case Constants.Method.CRYPTO_SCOUT_GET_FGI -> cryptoScoutFgis.addAll(message.value());
                     // BybitCryptoCollector methods
-                    case Constants.Method.BYBIT_GET_KLINE_1M -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
+                    case Constants.Method.BYBIT_GET_KLINE_1M -> bybitKlines1m.addAll(message.value());
 
                     case Constants.Method.BYBIT_GET_KLINE_5M -> {
                         final var value = message.value();
