@@ -30,37 +30,16 @@ import com.github.akarazhev.cryptoscout.test.AmqpTestPublisher;
 import com.github.akarazhev.cryptoscout.test.MockData;
 import com.github.akarazhev.cryptoscout.test.PodmanCompose;
 import com.github.akarazhev.jcryptolib.stream.Message;
-import com.github.akarazhev.jcryptolib.stream.Payload;
-import com.github.akarazhev.jcryptolib.stream.Provider;
-import com.github.akarazhev.jcryptolib.stream.Source;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.TestUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_ALL_LIQUIDATION;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_KLINE_15M;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_KLINE_1D;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_KLINE_1M;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_KLINE_240M;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_KLINE_5M;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_KLINE_60M;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_ORDER_BOOK_1;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_ORDER_BOOK_1000;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_ORDER_BOOK_200;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_ORDER_BOOK_50;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_PUBLIC_TRADE;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_TICKER;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_FGI;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W;
@@ -81,9 +60,10 @@ final class DataServiceTest {
     private static DataService dataService;
     private static AmqpPublisher chatbotPublisher;
     private static AmqpPublisher collectorPublisher;
+    private static AmqpConsumer analystConsumer;
 
-    private static AmqpTestPublisher analystQueuePublisher;
-    private static AmqpTestConsumer collectorQueueConsumer;
+    private static AmqpTestPublisher analystTestPublisher;
+    private static AmqpTestConsumer collectorTestConsumer;
 
     @BeforeAll
     static void setup() {
@@ -96,24 +76,28 @@ final class DataServiceTest {
         collectorPublisher = AmqpPublisher.create(reactor, executor, AmqpConfig.getConnectionFactory(),
                 COLLECTOR_PUBLISHER_CLIENT_NAME, AmqpConfig.getAmqpCollectorQueue());
         dataService = DataService.create(reactor, executor, chatbotPublisher, collectorPublisher);
+        analystConsumer = AmqpConsumer.create(reactor, executor, AmqpConfig.getConnectionFactory(),
+                ANALYST_CONSUMER_CLIENT_NAME, AmqpConfig.getAmqpAnalystQueue());
+        analystConsumer.getStreamSupplier().streamTo(dataService.getStreamConsumer());
 
-        analystQueuePublisher = AmqpTestPublisher.create(reactor, executor, AmqpConfig.getConnectionFactory(),
+        analystTestPublisher = AmqpTestPublisher.create(reactor, executor, AmqpConfig.getConnectionFactory(),
                 AmqpConfig.getAmqpAnalystQueue());
-        collectorQueueConsumer = AmqpTestConsumer.create(reactor, executor, AmqpConfig.getConnectionFactory(),
+        collectorTestConsumer = AmqpTestConsumer.create(reactor, executor, AmqpConfig.getConnectionFactory(),
                 AmqpConfig.getAmqpCollectorQueue());
 
-        TestUtils.await(analystQueuePublisher.start(), chatbotPublisher.start(), collectorPublisher.start());
+        TestUtils.await(chatbotPublisher.start(), collectorPublisher.start(), analystTestPublisher.start());
     }
 
     @BeforeEach
     void resetState() {
-        collectorQueueConsumer.stop();
+        analystTestPublisher.stop();
+        collectorTestConsumer.stop();
     }
 
     @Test
     void serviceStartsSendsInitialRequests() {
-        TestUtils.await(dataService.start().whenComplete(collectorQueueConsumer::start));
-        final var message = TestUtils.await(collectorQueueConsumer.getMessage());
+        TestUtils.await(dataService.start().whenComplete(collectorTestConsumer::start));
+        final var message = TestUtils.await(collectorTestConsumer.getMessage());
 
         assertNotNull(message);
         assertEquals(Message.Type.REQUEST, message.command().type());
@@ -134,9 +118,9 @@ final class DataServiceTest {
         final var message = Message.of(Message.Command.of(Message.Type.RESPONSE, COLLECTOR, CRYPTO_SCOUT_GET_FGI),
                 List.of(fgi));
 
-        TestUtils.await(analystQueuePublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), message));
-        Thread.sleep(500);
+        TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
+                AmqpConfig.getAmqpAnalystRoutingKey(), message).whenComplete(analystConsumer::start));
+//        Thread.sleep(500);
     }
 
 //    @Test
