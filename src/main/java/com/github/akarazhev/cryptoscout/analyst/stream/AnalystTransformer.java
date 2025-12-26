@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public final class AnalystTransformer extends AbstractStreamTransformer<StreamPayload, StreamPayload> {
@@ -72,15 +71,23 @@ public final class AnalystTransformer extends AbstractStreamTransformer<StreamPa
                     return;
                 }
 
-                final BiConsumer<Payload<Map<String, Object>>, Exception> callback = (result, error) -> {
-                    if (reactor.inReactorThread()) {
-                        handleCallback(output, in, result, error);
-                    } else {
-                        reactor.execute(() -> handleCallback(output, in, result, error));
-                    }
-                };
-
-                dataService.processAsync(preprocessed, callback);
+                dataService.processAsync(preprocessed)
+                        .whenResult(result -> {
+                            if (reactor.inReactorThread()) {
+                                output.accept(new StreamPayload(in.stream(), in.offset(), result));
+                            } else {
+                                reactor.execute(() -> output.accept(new StreamPayload(in.stream(), in.offset(), result)));
+                            }
+                        })
+                        .whenException(error -> {
+                            LOGGER.error("DataService processing error at offset {} for stream {}: {}",
+                                    in.offset(), in.stream(), error.getMessage(), error);
+                            if (reactor.inReactorThread()) {
+                                output.accept(new StreamPayload(in.stream(), in.offset(), null));
+                            } else {
+                                reactor.execute(() -> output.accept(new StreamPayload(in.stream(), in.offset(), null)));
+                            }
+                        });
             } catch (final Exception ex) {
                 LOGGER.error("AnalystTransformer failed at offset {} for stream {}: {}",
                         in.offset(), in.stream(), ex.getMessage(), ex);
@@ -89,16 +96,6 @@ public final class AnalystTransformer extends AbstractStreamTransformer<StreamPa
         };
     }
 
-    private void handleCallback(final StreamDataAcceptor<StreamPayload> output, final StreamPayload in,
-                                final Payload<Map<String, Object>> result, final Exception error) {
-        if (error != null) {
-            LOGGER.error("DataService processing error at offset {} for stream {}: {}",
-                    in.offset(), in.stream(), error.getMessage(), error);
-            output.accept(new StreamPayload(in.stream(), in.offset(), null));
-        } else {
-            output.accept(new StreamPayload(in.stream(), in.offset(), result));
-        }
-    }
 
     private static Payload<Map<String, Object>> bybitPreprocessor(final Payload<Map<String, Object>> payload) {
         if (!Provider.BYBIT.equals(payload.getProvider())) {

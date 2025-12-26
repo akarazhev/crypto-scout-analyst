@@ -46,9 +46,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.BiConsumer;
 
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_FGI;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D;
@@ -230,17 +228,9 @@ public final class DataService extends AbstractReactive implements ReactiveServi
         }
     }
 
-    public void processAsync(final Payload<Map<String, Object>> payload,
-                             final BiConsumer<Payload<Map<String, Object>>, Exception> callback) {
-        CompletableFuture.supplyAsync(() -> enrichPayload(payload), executor)
-                .whenComplete((result, error) -> {
-                    if (error != null) {
-                        LOGGER.error("Failed to process payload: {}", error.getMessage(), error);
-                        callback.accept(null, (Exception) error);
-                    } else {
-                        callback.accept(result, null);
-                    }
-                });
+    public Promise<Payload<Map<String, Object>>> processAsync(final Payload<Map<String, Object>> payload) {
+        return Promise.ofBlocking(executor, () -> enrichPayload(payload))
+                .whenException(error -> LOGGER.error("Failed to process payload: {}", error.getMessage(), error));
     }
 
     private Payload<Map<String, Object>> enrichPayload(final Payload<Map<String, Object>> payload) {

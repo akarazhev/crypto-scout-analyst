@@ -43,11 +43,8 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_ALL_LIQUIDATION;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_KLINE_15M;
@@ -71,7 +68,6 @@ import static com.github.akarazhev.cryptoscout.analyst.DataServiceTest.Config.CH
 import static com.github.akarazhev.cryptoscout.analyst.DataServiceTest.Config.COLLECTOR_PUBLISHER_CLIENT_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class DataServiceTest {
@@ -146,12 +142,12 @@ final class DataServiceTest {
     @Test
     void consumesCryptoScoutFgiResponse() throws Exception {
         final var fgi = MockData.get(MockData.Source.CRYPTO_SCOUT, MockData.Type.FGI);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, CRYPTO_SCOUT_GET_FGI),
                 List.of(fgi));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var fgis = dataService.getCryptoScoutFgis();
         assertNotNull(fgis);
@@ -162,12 +158,12 @@ final class DataServiceTest {
     @Test
     void consumesCryptoScoutKline1dResponse() throws Exception {
         final var kline = MockData.get(MockData.Source.CRYPTO_SCOUT, MockData.Type.KLINE_D);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, CRYPTO_SCOUT_GET_KLINE_1D),
                 List.of(kline));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var klines = dataService.getCryptoScoutKlines1d();
         assertNotNull(klines);
@@ -178,12 +174,12 @@ final class DataServiceTest {
     @Test
     void consumesCryptoScoutKline1wResponse() throws Exception {
         final var kline = MockData.get(MockData.Source.CRYPTO_SCOUT, MockData.Type.KLINE_W);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, CRYPTO_SCOUT_GET_KLINE_1W),
                 List.of(kline));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var klines = dataService.getCryptoScoutKlines1w();
         assertNotNull(klines);
@@ -194,12 +190,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitKline1mResponse() throws Exception {
         final var kline = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.KLINE_1);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_KLINE_1M),
                 List.of(kline));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var klines = dataService.getBybitKlines1m();
         assertNotNull(klines);
@@ -210,12 +206,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitKline5mResponse() throws Exception {
         final var kline = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.KLINE_5);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_KLINE_5M),
                 List.of(kline));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var klines = dataService.getBybitKlines5m();
         assertNotNull(klines);
@@ -226,12 +222,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitKline15mResponse() throws Exception {
         final var kline = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.KLINE_15);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_KLINE_15M),
                 List.of(kline));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var klines = dataService.getBybitKlines15m();
         assertNotNull(klines);
@@ -242,12 +238,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitKline60mResponse() throws Exception {
         final var kline = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.KLINE_60);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_KLINE_60M),
                 List.of(kline));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var klines = dataService.getBybitKlines60m();
         assertNotNull(klines);
@@ -258,12 +254,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitKline240mResponse() throws Exception {
         final var kline = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.KLINE_240);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_KLINE_240M),
                 List.of(kline));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var klines = dataService.getBybitKlines240m();
         assertNotNull(klines);
@@ -274,12 +270,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitKline1dResponse() throws Exception {
         final var kline = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.KLINE_D);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_KLINE_1D),
                 List.of(kline));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var klines = dataService.getBybitKlines1d();
         assertNotNull(klines);
@@ -290,12 +286,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitTickerResponse() throws Exception {
         final var ticker = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.TICKERS);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_TICKER),
                 List.of(ticker));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var tickers = dataService.getBybitTickers();
         assertNotNull(tickers);
@@ -306,12 +302,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitOrderBook1Response() throws Exception {
         final var ob = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.ORDER_BOOK_1);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_ORDER_BOOK_1),
                 List.of(ob));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var orderBooks = dataService.getBybitOrderBooks1();
         assertNotNull(orderBooks);
@@ -322,12 +318,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitOrderBook50Response() throws Exception {
         final var ob = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.ORDER_BOOK_50);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_ORDER_BOOK_50),
                 List.of(ob));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var orderBooks = dataService.getBybitOrderBooks50();
         assertNotNull(orderBooks);
@@ -338,12 +334,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitOrderBook200Response() throws Exception {
         final var ob = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.ORDER_BOOK_200);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_ORDER_BOOK_200),
                 List.of(ob));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var orderBooks = dataService.getBybitOrderBooks200();
         assertNotNull(orderBooks);
@@ -354,12 +350,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitOrderBook1000Response() throws Exception {
         final var ob = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.ORDER_BOOK_1000);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_ORDER_BOOK_1000),
                 List.of(ob));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var orderBooks = dataService.getBybitOrderBooks1000();
         assertNotNull(orderBooks);
@@ -370,12 +366,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitPublicTradeResponse() throws Exception {
         final var pt = MockData.get(MockData.Source.BYBIT_SPOT, MockData.Type.PUBLIC_TRADE);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_PUBLIC_TRADE),
                 List.of(pt));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var publicTrades = dataService.getBybitPublicTrades();
         assertNotNull(publicTrades);
@@ -386,12 +382,12 @@ final class DataServiceTest {
     @Test
     void consumesBybitAllLiquidationResponse() throws Exception {
         final var al = MockData.get(MockData.Source.BYBIT_LINEAR, MockData.Type.ALL_LIQUIDATION);
-        final var responseMessage = Message.of(
+        final var message = Message.of(
                 Message.Command.of(Message.Type.RESPONSE, COLLECTOR, BYBIT_GET_ALL_LIQUIDATION),
                 List.of(al));
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+                AmqpConfig.getAmqpAnalystRoutingKey(), message));
         processMessages();
         final var liquidations = dataService.getBybitAllLiquidations();
         assertNotNull(liquidations);
@@ -401,25 +397,15 @@ final class DataServiceTest {
 
     @Test
     void processAsyncReturnsEnrichedPayload() throws Exception {
-        final var latch = new CountDownLatch(1);
-        final var resultRef = new AtomicReference<Payload<Map<String, Object>>>();
-        final var errorRef = new AtomicReference<Exception>();
-
         final var data = MockData.get(MockData.Source.CRYPTO_SCOUT, MockData.Type.FGI);
         final var payload = Payload.of(Provider.CMC, Source.FGI, data);
 
-        dataService.processAsync(payload, (result, error) -> {
-            resultRef.set(result);
-            errorRef.set(error);
-            latch.countDown();
-        });
+        final var result = TestUtils.await(dataService.processAsync(payload));
 
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
-        assertNull(errorRef.get());
-        assertNotNull(resultRef.get());
-        assertEquals(payload.getProvider(), resultRef.get().getProvider());
-        assertEquals(payload.getSource(), resultRef.get().getSource());
-        assertEquals(payload.getData(), resultRef.get().getData());
+        assertNotNull(result);
+        assertEquals(payload.getProvider(), result.getProvider());
+        assertEquals(payload.getSource(), result.getSource());
+        assertEquals(payload.getData(), result.getData());
     }
 
     @Test
