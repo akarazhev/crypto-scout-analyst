@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -117,6 +118,11 @@ final class DataServiceTest {
         TestUtils.await(collectorTestConsumer.stop(), chatbotTestConsumer.stop());
     }
 
+    private void processMessages() {
+        reactor.post(() -> reactor.delay(Duration.ofMillis(200), () -> {}));
+        reactor.run();
+    }
+
     @Test
     void serviceStartPublishesInitialRequests() {
         TestUtils.await(dataService.start().whenComplete(collectorTestConsumer::start));
@@ -146,6 +152,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var fgis = dataService.getCryptoScoutFgis();
         assertNotNull(fgis);
         assertEquals(1, fgis.size());
@@ -161,6 +168,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var klines = dataService.getCryptoScoutKlines1d();
         assertNotNull(klines);
         assertEquals(1, klines.size());
@@ -176,6 +184,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var klines = dataService.getCryptoScoutKlines1w();
         assertNotNull(klines);
         assertEquals(1, klines.size());
@@ -191,6 +200,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var klines = dataService.getBybitKlines1m();
         assertNotNull(klines);
         assertEquals(1, klines.size());
@@ -206,6 +216,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var klines = dataService.getBybitKlines5m();
         assertNotNull(klines);
         assertEquals(1, klines.size());
@@ -221,6 +232,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var klines = dataService.getBybitKlines15m();
         assertNotNull(klines);
         assertEquals(1, klines.size());
@@ -236,6 +248,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var klines = dataService.getBybitKlines60m();
         assertNotNull(klines);
         assertEquals(1, klines.size());
@@ -251,6 +264,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var klines = dataService.getBybitKlines240m();
         assertNotNull(klines);
         assertEquals(1, klines.size());
@@ -266,6 +280,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var klines = dataService.getBybitKlines1d();
         assertNotNull(klines);
         assertEquals(1, klines.size());
@@ -281,6 +296,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var tickers = dataService.getBybitTickers();
         assertNotNull(tickers);
         assertEquals(1, tickers.size());
@@ -296,6 +312,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var orderBooks = dataService.getBybitOrderBooks1();
         assertNotNull(orderBooks);
         assertEquals(1, orderBooks.size());
@@ -311,6 +328,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var orderBooks = dataService.getBybitOrderBooks50();
         assertNotNull(orderBooks);
         assertEquals(1, orderBooks.size());
@@ -326,6 +344,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var orderBooks = dataService.getBybitOrderBooks200();
         assertNotNull(orderBooks);
         assertEquals(1, orderBooks.size());
@@ -341,6 +360,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var orderBooks = dataService.getBybitOrderBooks1000();
         assertNotNull(orderBooks);
         assertEquals(1, orderBooks.size());
@@ -356,6 +376,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var publicTrades = dataService.getBybitPublicTrades();
         assertNotNull(publicTrades);
         assertEquals(1, publicTrades.size());
@@ -371,6 +392,7 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
+        processMessages();
         final var liquidations = dataService.getBybitAllLiquidations();
         assertNotNull(liquidations);
         assertEquals(1, liquidations.size());
@@ -401,7 +423,7 @@ final class DataServiceTest {
     }
 
     @Test
-    void handlesInvalidMessageGracefully() throws Exception {
+    void handlesInvalidMessageGracefully() {
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(),
                 Message.of(Message.Command.of(Message.Type.RESPONSE, COLLECTOR, "unknown.method"),
@@ -409,7 +431,7 @@ final class DataServiceTest {
     }
 
     @Test
-    void handlesUnknownMessageTypeGracefully() throws Exception {
+    void handlesUnknownMessageTypeGracefully() {
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(),
                 Message.of(Message.Command.of(Message.Type.REQUEST, COLLECTOR, CRYPTO_SCOUT_GET_FGI),
