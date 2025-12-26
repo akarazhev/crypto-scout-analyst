@@ -33,4 +33,4 @@ Take the following roles:
   `crypto-scout-collector` project, test samples and helpers can be found in the `crypto-scout-test` project.
 - As the `expert java engineer` recheck your proposal and make sure that they are correct and haven't missed any
   important points.
-- As the technical writer update the `1-refactor-crypto-bybit-analyst.md` file with your resolution.
+- As the technical writer update the `3-implement-data-service-test.md` file with your resolution.
