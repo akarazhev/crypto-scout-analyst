@@ -72,124 +72,51 @@ public final class DataService {
 
     private void consume(final Message<List<Object>> message) {
         final var command = message.command();
-        switch (command.type()) {
-            case Message.Type.REQUEST -> {
-                switch (command.method()) {
-                    // CryptoScoutCollector methods
-                    case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.CRYPTO_SCOUT_GET_FGI -> {
-                        final var args = message.value();
-                    }
-
-                    // BybitCryptoCollector methods
-                    case Constants.Method.BYBIT_GET_KLINE_1M -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_KLINE_5M -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_KLINE_15M -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_KLINE_60M -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_KLINE_240M -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_KLINE_1D -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_TICKER -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_ORDER_BOOK_1 -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_ORDER_BOOK_50 -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_ORDER_BOOK_200 -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_ORDER_BOOK_1000 -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_PUBLIC_TRADE -> {
-                        final var args = message.value();
-                    }
-
-                    case Constants.Method.BYBIT_GET_ALL_LIQUIDATION -> {
-                        final var args = message.value();
-                    }
-
-                    default -> LOGGER.debug("Unhandled request method: {}", command.method());
-                }
-            }
-
-            default -> LOGGER.debug("Unhandled message type: {}", command.type());
+        if (command.type() != Message.Type.REQUEST) {
+            LOGGER.debug("Unhandled message type: {}", command.type());
+            return;
         }
+
+        final var method = command.method();
+        LOGGER.debug("Processing request method: {}", method);
     }
 
     public void processAsync(final Payload<Map<String, Object>> payload,
                               final BiConsumer<Payload<Map<String, Object>>, Exception> callback) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                final var processedData = processPayload(payload);
-                callback.accept(processedData, null);
-            } catch (final Exception ex) {
-                LOGGER.error("Failed to process payload: {}", ex.getMessage(), ex);
-                callback.accept(null, ex);
-            }
-        }, executor);
+        CompletableFuture.supplyAsync(() -> enrichPayload(payload), executor)
+                .whenComplete((result, error) -> {
+                    if (error != null) {
+                        LOGGER.error("Failed to process payload: {}", error.getMessage(), error);
+                        callback.accept(null, (Exception) error);
+                    } else {
+                        callback.accept(result, null);
+                    }
+                });
     }
 
-    private Payload<Map<String, Object>> processPayload(final Payload<Map<String, Object>> payload) {
-        final var data = payload.getData();
-        final var source = payload.getSource();
-        
-        final var enrichedData = enrichData(data);
-        
-        return Payload.of(payload.getProvider(), source, enrichedData);
-    }
-
-    private Map<String, Object> enrichData(final Map<String, Object> data) {
-        return data;
+    private Payload<Map<String, Object>> enrichPayload(final Payload<Map<String, Object>> payload) {
+        return payload;
     }
 
     private <T> void publish(final String source, final String method, final T data) {
         final var command = Message.Command.of(Message.Type.RESPONSE, Constants.Source.COLLECTOR, method);
+        final var message = Message.of(command, data);
+        
         switch (source) {
-            case Constants.Source.CHATBOT -> chatbotPublisher.publish(
-                    AmqpConfig.getAmqpCryptoScoutExchange(),
-                    AmqpConfig.getAmqpChatbotRoutingKey(),
-                    Message.of(command, data)
-            );
-
-            case Constants.Source.COLLECTOR -> collectorPublisher.publish(
-                    AmqpConfig.getAmqpCryptoScoutExchange(),
-                    AmqpConfig.getAmqpCollectorRoutingKey(),
-                    Message.of(command, data)
-            );
-
+            case Constants.Source.CHATBOT -> {
+                chatbotPublisher.publish(
+                        AmqpConfig.getAmqpCryptoScoutExchange(),
+                        AmqpConfig.getAmqpChatbotRoutingKey(),
+                        message
+                );
+            }
+            case Constants.Source.COLLECTOR -> {
+                collectorPublisher.publish(
+                        AmqpConfig.getAmqpCryptoScoutExchange(),
+                        AmqpConfig.getAmqpCollectorRoutingKey(),
+                        message
+                );
+            }
             default -> LOGGER.warn("Unknown source for response: {}", source);
         }
     }
