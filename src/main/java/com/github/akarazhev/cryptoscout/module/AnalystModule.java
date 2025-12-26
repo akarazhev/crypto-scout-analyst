@@ -58,6 +58,7 @@ public final class AnalystModule extends AbstractModule {
     }
 
     @Provides
+    @Eager
     private AnalystDataSource analystDataSource(final NioReactor reactor, final Executor executor) {
         return AnalystDataSource.create(reactor, executor);
     }
@@ -111,7 +112,6 @@ public final class AnalystModule extends AbstractModule {
     }
 
     @Provides
-    @Eager
     private StreamService streamService(final NioReactor reactor, final BybitStreamService bybitStreamService,
                                         final CryptoScoutService cryptoScoutService) {
         return StreamService.create(reactor, bybitStreamService, cryptoScoutService);
