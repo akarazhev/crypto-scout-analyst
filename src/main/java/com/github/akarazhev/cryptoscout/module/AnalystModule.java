@@ -65,7 +65,7 @@ public final class AnalystModule extends AbstractModule {
     @Provides
     private StreamOffsetsRepository streamOffsetsRepository(final NioReactor reactor,
                                                             final AnalystDataSource analystDataSource) {
-        return StreamOffsetsRepository.create(reactor, analystDataSource);
+        return StreamOffsetsRepository.create(reactor, analystDataSource.getDataSource());
     }
 
     @Provides

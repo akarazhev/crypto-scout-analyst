@@ -42,13 +42,13 @@ import static com.github.akarazhev.cryptoscout.analyst.db.Constants.Offsets.STRE
 public final class StreamOffsetsRepository extends AbstractReactive implements ReactiveService {
     private final DataSource dataSource;
 
-    private StreamOffsetsRepository(final NioReactor reactor, final AnalystDataSource analystDataSource) {
+    private StreamOffsetsRepository(final NioReactor reactor, final DataSource dataSource) {
         super(reactor);
-        this.dataSource = analystDataSource.getDataSource();
+        this.dataSource = dataSource;
     }
 
-    public static StreamOffsetsRepository create(final NioReactor reactor, final AnalystDataSource analystDataSource) {
-        return new StreamOffsetsRepository(reactor, analystDataSource);
+    public static StreamOffsetsRepository create(final NioReactor reactor, final DataSource dataSource) {
+        return new StreamOffsetsRepository(reactor, dataSource);
     }
 
     @Override
