@@ -25,7 +25,7 @@
 package com.github.akarazhev.cryptoscout.analyst;
 
 import com.github.akarazhev.cryptoscout.analyst.db.StreamOffsetsRepository;
-import com.github.akarazhev.cryptoscout.analyst.stream.BybitTransformer;
+import com.github.akarazhev.cryptoscout.analyst.stream.AnalystTransformer;
 import com.github.akarazhev.cryptoscout.analyst.stream.BytesToPayloadTransformer;
 import com.github.akarazhev.cryptoscout.analyst.stream.MessageSupplier;
 import com.github.akarazhev.cryptoscout.analyst.stream.StreamPublisher;
@@ -50,6 +50,7 @@ public final class BybitStreamService extends AbstractReactive implements Reacti
     private static final Logger LOGGER = LoggerFactory.getLogger(BybitStreamService.class);
     private final Executor executor;
     private final StreamOffsetsRepository streamOffsetsRepository;
+    private final DataService dataService;
     private final String sourceStream;
     private final String targetStream;
     private volatile Environment environment;
@@ -58,15 +59,18 @@ public final class BybitStreamService extends AbstractReactive implements Reacti
     private volatile MessageSupplier messageSupplier;
 
     public static BybitStreamService create(final NioReactor reactor, final Executor executor,
-                                            final StreamOffsetsRepository streamOffsetsRepository) {
-        return new BybitStreamService(reactor, executor, streamOffsetsRepository);
+                                            final StreamOffsetsRepository streamOffsetsRepository,
+                                            final DataService dataService) {
+        return new BybitStreamService(reactor, executor, streamOffsetsRepository, dataService);
     }
 
     private BybitStreamService(final NioReactor reactor, final Executor executor,
-                               final StreamOffsetsRepository streamOffsetsRepository) {
+                               final StreamOffsetsRepository streamOffsetsRepository,
+                               final DataService dataService) {
         super(reactor);
         this.executor = executor;
         this.streamOffsetsRepository = streamOffsetsRepository;
+        this.dataService = dataService;
         this.sourceStream = AmqpConfig.getAmqpBybitStream();
         this.targetStream = AmqpConfig.getAmqpBybitTaStream();
     }
@@ -83,7 +87,7 @@ public final class BybitStreamService extends AbstractReactive implements Reacti
                 .then(() -> {
                     messageSupplier = MessageSupplier.create();
                     messageSupplier.transformWith(BytesToPayloadTransformer.create())
-                            .transformWith(BybitTransformer.create())
+                            .transformWith(AnalystTransformer.createForBybit(dataService))
                             .streamTo(StreamPublisher.create(producer, streamOffsetsRepository, executor));
                     return Promise.ofBlocking(executor, () -> {
                         consumer = environment.consumerBuilder()

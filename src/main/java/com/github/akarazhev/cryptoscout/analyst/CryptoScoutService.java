@@ -25,8 +25,8 @@
 package com.github.akarazhev.cryptoscout.analyst;
 
 import com.github.akarazhev.cryptoscout.analyst.db.StreamOffsetsRepository;
+import com.github.akarazhev.cryptoscout.analyst.stream.AnalystTransformer;
 import com.github.akarazhev.cryptoscout.analyst.stream.BytesToPayloadTransformer;
-import com.github.akarazhev.cryptoscout.analyst.stream.CryptoScoutTransformer;
 import com.github.akarazhev.cryptoscout.analyst.stream.MessageSupplier;
 import com.github.akarazhev.cryptoscout.analyst.stream.StreamPublisher;
 import com.github.akarazhev.cryptoscout.config.AmqpConfig;
@@ -50,6 +50,7 @@ public final class CryptoScoutService extends AbstractReactive implements Reacti
     private static final Logger LOGGER = LoggerFactory.getLogger(CryptoScoutService.class);
     private final Executor executor;
     private final StreamOffsetsRepository streamOffsetsRepository;
+    private final DataService dataService;
     private final String stream;
     private volatile Environment environment;
     private volatile Consumer consumer;
@@ -57,15 +58,18 @@ public final class CryptoScoutService extends AbstractReactive implements Reacti
     private volatile MessageSupplier messageSupplier;
 
     public static CryptoScoutService create(final NioReactor reactor, final Executor executor,
-                                            final StreamOffsetsRepository streamOffsetsRepository) {
-        return new CryptoScoutService(reactor, executor, streamOffsetsRepository);
+                                            final StreamOffsetsRepository streamOffsetsRepository,
+                                            final DataService dataService) {
+        return new CryptoScoutService(reactor, executor, streamOffsetsRepository, dataService);
     }
 
     private CryptoScoutService(final NioReactor reactor, final Executor executor,
-                               final StreamOffsetsRepository streamOffsetsRepository) {
+                               final StreamOffsetsRepository streamOffsetsRepository,
+                               final DataService dataService) {
         super(reactor);
         this.executor = executor;
         this.streamOffsetsRepository = streamOffsetsRepository;
+        this.dataService = dataService;
         this.stream = AmqpConfig.getAmqpCryptoScoutStream();
     }
 
@@ -81,7 +85,7 @@ public final class CryptoScoutService extends AbstractReactive implements Reacti
                 .then(() -> {
                     messageSupplier = MessageSupplier.create();
                     messageSupplier.transformWith(BytesToPayloadTransformer.create())
-                            .transformWith(CryptoScoutTransformer.create())
+                            .transformWith(AnalystTransformer.createForCryptoScout(dataService))
                             .streamTo(StreamPublisher.create(producer, streamOffsetsRepository, executor));
                     return Promise.ofBlocking(executor, () -> {
                         consumer = environment.consumerBuilder()

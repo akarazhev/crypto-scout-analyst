@@ -26,6 +26,7 @@ package com.github.akarazhev.cryptoscout.analyst;
 
 import com.github.akarazhev.cryptoscout.config.AmqpConfig;
 import com.github.akarazhev.jcryptolib.stream.Message;
+import com.github.akarazhev.jcryptolib.stream.Payload;
 import com.github.akarazhev.jcryptolib.util.JsonUtils;
 import io.activej.datastream.consumer.AbstractStreamConsumer;
 import io.activej.datastream.consumer.StreamConsumer;
@@ -33,19 +34,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
 
 public final class DataService {
     private final static Logger LOGGER = LoggerFactory.getLogger(DataService.class);
     private final AmqpPublisher chatbotPublisher;
     private final AmqpPublisher collectorPublisher;
+    private final Executor executor;
 
-    public static DataService create(final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher) {
-        return new DataService(chatbotPublisher, collectorPublisher);
+    public static DataService create(final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher,
+                                     final Executor executor) {
+        return new DataService(chatbotPublisher, collectorPublisher, executor);
     }
 
-    private DataService(final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher) {
+    private DataService(final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher,
+                        final Executor executor) {
         this.chatbotPublisher = chatbotPublisher;
         this.collectorPublisher = collectorPublisher;
+        this.executor = executor;
     }
 
     public StreamConsumer<byte[]> getStreamConsumer() {
@@ -138,6 +147,32 @@ public final class DataService {
 
             default -> LOGGER.debug("Unhandled message type: {}", command.type());
         }
+    }
+
+    public void processAsync(final Payload<Map<String, Object>> payload,
+                              final BiConsumer<Payload<Map<String, Object>>, Exception> callback) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                final var processedData = processPayload(payload);
+                callback.accept(processedData, null);
+            } catch (final Exception ex) {
+                LOGGER.error("Failed to process payload: {}", ex.getMessage(), ex);
+                callback.accept(null, ex);
+            }
+        }, executor);
+    }
+
+    private Payload<Map<String, Object>> processPayload(final Payload<Map<String, Object>> payload) {
+        final var data = payload.getData();
+        final var source = payload.getSource();
+        
+        final var enrichedData = enrichData(data);
+        
+        return Payload.of(payload.getProvider(), source, enrichedData);
+    }
+
+    private Map<String, Object> enrichData(final Map<String, Object> data) {
+        return data;
     }
 
     private <T> void publish(final String source, final String method, final T data) {

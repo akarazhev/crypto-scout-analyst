@@ -98,14 +98,16 @@ public final class AnalystModule extends AbstractModule {
 
     @Provides
     private BybitStreamService bybitStreamService(final NioReactor reactor, final Executor executor,
-                                                  final StreamOffsetsRepository streamOffsetsRepository) {
-        return BybitStreamService.create(reactor, executor, streamOffsetsRepository);
+                                                  final StreamOffsetsRepository streamOffsetsRepository,
+                                                  final DataService dataService) {
+        return BybitStreamService.create(reactor, executor, streamOffsetsRepository, dataService);
     }
 
     @Provides
     private CryptoScoutService cryptoScoutService(final NioReactor reactor, final Executor executor,
-                                                  final StreamOffsetsRepository streamOffsetsRepository) {
-        return CryptoScoutService.create(reactor, executor, streamOffsetsRepository);
+                                                  final StreamOffsetsRepository streamOffsetsRepository,
+                                                  final DataService dataService) {
+        return CryptoScoutService.create(reactor, executor, streamOffsetsRepository, dataService);
     }
 
     @Provides
@@ -117,7 +119,8 @@ public final class AnalystModule extends AbstractModule {
 
     @Provides
     private DataService dataService(@Named(CHATBOT_PUBLISHER) final AmqpPublisher chatbotPublisher,
-                                    @Named(COLLECTOR_PUBLISHER) final AmqpPublisher collectorPublisher) {
-        return DataService.create(chatbotPublisher, collectorPublisher);
+                                    @Named(COLLECTOR_PUBLISHER) final AmqpPublisher collectorPublisher,
+                                    final Executor executor) {
+        return DataService.create(chatbotPublisher, collectorPublisher, executor);
     }
 }
