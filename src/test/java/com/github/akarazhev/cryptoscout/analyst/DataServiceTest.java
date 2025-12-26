@@ -206,7 +206,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var klines = dataService.getBybitKlines5m();
+        assertNotNull(klines);
+        assertEquals(1, klines.size());
+        assertEquals(kline, klines.peek());
     }
 
     @Test
@@ -218,7 +221,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var klines = dataService.getBybitKlines15m();
+        assertNotNull(klines);
+        assertEquals(1, klines.size());
+        assertEquals(kline, klines.peek());
     }
 
     @Test
@@ -230,7 +236,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var klines = dataService.getBybitKlines60m();
+        assertNotNull(klines);
+        assertEquals(1, klines.size());
+        assertEquals(kline, klines.peek());
     }
 
     @Test
@@ -242,7 +251,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var klines = dataService.getBybitKlines240m();
+        assertNotNull(klines);
+        assertEquals(1, klines.size());
+        assertEquals(kline, klines.peek());
     }
 
     @Test
@@ -254,7 +266,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var klines = dataService.getBybitKlines1d();
+        assertNotNull(klines);
+        assertEquals(1, klines.size());
+        assertEquals(kline, klines.peek());
     }
 
     @Test
@@ -266,7 +281,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var tickers = dataService.getBybitTickers();
+        assertNotNull(tickers);
+        assertEquals(1, tickers.size());
+        assertEquals(ticker, tickers.peek());
     }
 
     @Test
@@ -278,7 +296,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var orderBooks = dataService.getBybitOrderBooks1();
+        assertNotNull(orderBooks);
+        assertEquals(1, orderBooks.size());
+        assertEquals(ob, orderBooks.peek());
     }
 
     @Test
@@ -290,7 +311,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var orderBooks = dataService.getBybitOrderBooks50();
+        assertNotNull(orderBooks);
+        assertEquals(1, orderBooks.size());
+        assertEquals(ob, orderBooks.peek());
     }
 
     @Test
@@ -302,7 +326,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var orderBooks = dataService.getBybitOrderBooks200();
+        assertNotNull(orderBooks);
+        assertEquals(1, orderBooks.size());
+        assertEquals(ob, orderBooks.peek());
     }
 
     @Test
@@ -314,7 +341,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var orderBooks = dataService.getBybitOrderBooks1000();
+        assertNotNull(orderBooks);
+        assertEquals(1, orderBooks.size());
+        assertEquals(ob, orderBooks.peek());
     }
 
     @Test
@@ -326,7 +356,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var publicTrades = dataService.getBybitPublicTrades();
+        assertNotNull(publicTrades);
+        assertEquals(1, publicTrades.size());
+        assertEquals(pt, publicTrades.peek());
     }
 
     @Test
@@ -338,7 +371,10 @@ final class DataServiceTest {
 
         TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
                 AmqpConfig.getAmqpAnalystRoutingKey(), responseMessage));
-        Thread.sleep(100);
+        final var liquidations = dataService.getBybitAllLiquidations();
+        assertNotNull(liquidations);
+        assertEquals(1, liquidations.size());
+        assertEquals(al, liquidations.peek());
     }
 
     @Test
@@ -370,7 +406,6 @@ final class DataServiceTest {
                 AmqpConfig.getAmqpAnalystRoutingKey(),
                 Message.of(Message.Command.of(Message.Type.RESPONSE, COLLECTOR, "unknown.method"),
                         List.of(Map.of("test", "data")))));
-        Thread.sleep(100);
     }
 
     @Test
@@ -379,7 +414,6 @@ final class DataServiceTest {
                 AmqpConfig.getAmqpAnalystRoutingKey(),
                 Message.of(Message.Command.of(Message.Type.REQUEST, COLLECTOR, CRYPTO_SCOUT_GET_FGI),
                         List.of(Map.of("test", "data")))));
-        Thread.sleep(100);
     }
 
     @AfterAll

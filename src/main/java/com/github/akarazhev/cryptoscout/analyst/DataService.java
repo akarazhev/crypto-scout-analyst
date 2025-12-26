@@ -63,6 +63,18 @@ public final class DataService extends AbstractReactive implements ReactiveServi
     private final Queue<Map<String, Object>> cryptoScoutKlines1d = new ArrayDeque<>();
     private final Queue<Map<String, Object>> cryptoScoutKlines1w = new ArrayDeque<>();
     private final Queue<Map<String, Object>> bybitKlines1m = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitKlines5m = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitKlines15m = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitKlines60m = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitKlines240m = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitKlines1d = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitTickers = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitOrderBooks1 = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitOrderBooks50 = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitOrderBooks200 = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitOrderBooks1000 = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitPublicTrades = new ArrayDeque<>();
+    private final Queue<Map<String, Object>> bybitAllLiquidations = new ArrayDeque<>();
     private final AmqpPublisher chatbotPublisher;
     private final AmqpPublisher collectorPublisher;
     private final Executor executor;
@@ -96,6 +108,54 @@ public final class DataService extends AbstractReactive implements ReactiveServi
         return bybitKlines1m;
     }
 
+    Queue<Map<String, Object>> getBybitKlines5m() {
+        return bybitKlines5m;
+    }
+
+    Queue<Map<String, Object>> getBybitKlines15m() {
+        return bybitKlines15m;
+    }
+
+    Queue<Map<String, Object>> getBybitKlines60m() {
+        return bybitKlines60m;
+    }
+
+    Queue<Map<String, Object>> getBybitKlines240m() {
+        return bybitKlines240m;
+    }
+
+    Queue<Map<String, Object>> getBybitKlines1d() {
+        return bybitKlines1d;
+    }
+
+    Queue<Map<String, Object>> getBybitTickers() {
+        return bybitTickers;
+    }
+
+    Queue<Map<String, Object>> getBybitOrderBooks1() {
+        return bybitOrderBooks1;
+    }
+
+    Queue<Map<String, Object>> getBybitOrderBooks50() {
+        return bybitOrderBooks50;
+    }
+
+    Queue<Map<String, Object>> getBybitOrderBooks200() {
+        return bybitOrderBooks200;
+    }
+
+    Queue<Map<String, Object>> getBybitOrderBooks1000() {
+        return bybitOrderBooks1000;
+    }
+
+    Queue<Map<String, Object>> getBybitPublicTrades() {
+        return bybitPublicTrades;
+    }
+
+    Queue<Map<String, Object>> getBybitAllLiquidations() {
+        return bybitAllLiquidations;
+    }
+
     @Override
     public Promise<Void> start() {
         final var to = OffsetDateTime.ofInstant(Instant.ofEpochSecond(tomorrowInUtc()), ZoneId.of("UTC"));
@@ -108,6 +168,21 @@ public final class DataService extends AbstractReactive implements ReactiveServi
     @Override
     public Promise<Void> stop() {
         cryptoScoutFgis.clear();
+        cryptoScoutKlines1d.clear();
+        cryptoScoutKlines1w.clear();
+        bybitKlines1m.clear();
+        bybitKlines5m.clear();
+        bybitKlines15m.clear();
+        bybitKlines60m.clear();
+        bybitKlines240m.clear();
+        bybitKlines1d.clear();
+        bybitTickers.clear();
+        bybitOrderBooks1.clear();
+        bybitOrderBooks50.clear();
+        bybitOrderBooks200.clear();
+        bybitOrderBooks1000.clear();
+        bybitPublicTrades.clear();
+        bybitAllLiquidations.clear();
         return Promise.complete();
     }
 
@@ -135,67 +210,18 @@ public final class DataService extends AbstractReactive implements ReactiveServi
                     case Constants.Method.CRYPTO_SCOUT_GET_FGI -> cryptoScoutFgis.addAll(message.value());
                     // BybitCryptoCollector methods
                     case Constants.Method.BYBIT_GET_KLINE_1M -> bybitKlines1m.addAll(message.value());
-
-                    case Constants.Method.BYBIT_GET_KLINE_5M -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_KLINE_15M -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_KLINE_60M -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_KLINE_240M -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_KLINE_1D -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_TICKER -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_ORDER_BOOK_1 -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_ORDER_BOOK_50 -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_ORDER_BOOK_200 -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_ORDER_BOOK_1000 -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_PUBLIC_TRADE -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
-                    case Constants.Method.BYBIT_GET_ALL_LIQUIDATION -> {
-                        final var value = message.value();
-                        objects.addAll(value);
-                    }
-
+                    case Constants.Method.BYBIT_GET_KLINE_5M -> bybitKlines5m.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_KLINE_15M -> bybitKlines15m.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_KLINE_60M -> bybitKlines60m.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_KLINE_240M -> bybitKlines240m.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_KLINE_1D -> bybitKlines1d.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_TICKER -> bybitTickers.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_ORDER_BOOK_1 -> bybitOrderBooks1.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_ORDER_BOOK_50 -> bybitOrderBooks50.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_ORDER_BOOK_200 -> bybitOrderBooks200.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_ORDER_BOOK_1000 -> bybitOrderBooks1000.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_PUBLIC_TRADE -> bybitPublicTrades.addAll(message.value());
+                    case Constants.Method.BYBIT_GET_ALL_LIQUIDATION -> bybitAllLiquidations.addAll(message.value());
                     default -> LOGGER.debug("Unhandled response method: {}", command.method());
                 }
             }
