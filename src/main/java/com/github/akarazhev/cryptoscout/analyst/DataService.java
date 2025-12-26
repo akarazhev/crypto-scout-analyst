@@ -37,14 +37,29 @@ import io.activej.reactor.nio.NioReactor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
+import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_FGI;
+import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D;
+import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W;
+import static com.github.akarazhev.cryptoscout.analyst.Constants.Source.ANALYST;
+import static com.github.akarazhev.jcryptolib.bybit.Constants.Symbol.BTC_USDT;
+import static com.github.akarazhev.jcryptolib.util.TimeUtils.tomorrowInUtc;
+
 public final class DataService extends AbstractReactive implements ReactiveService {
     private final static Logger LOGGER = LoggerFactory.getLogger(DataService.class);
+    private final Queue<Map<String, Object>> objects = new ArrayDeque<>();
     private final AmqpPublisher chatbotPublisher;
     private final AmqpPublisher collectorPublisher;
     private final Executor executor;
@@ -64,11 +79,16 @@ public final class DataService extends AbstractReactive implements ReactiveServi
 
     @Override
     public Promise<Void> start() {
+        final var to = OffsetDateTime.ofInstant(Instant.ofEpochSecond(tomorrowInUtc()), ZoneId.of("UTC"));
+        getCryptoScoutFgi(to);
+        getCryptoScoutBtcUsdtKline1d(to);
+        getCryptoScoutBtcUsdtKline1w(to);
         return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
+        objects.clear();
         return Promise.complete();
     }
 
@@ -79,13 +99,13 @@ public final class DataService extends AbstractReactive implements ReactiveServi
     @SuppressWarnings("unchecked")
     private void consume(final byte[] body) {
         try {
-            consume((Message<List<Object>>) JsonUtils.bytes2Object(body, Message.class));
+            consume((Message<List<Map<String, Object>>>) JsonUtils.bytes2Object(body, Message.class));
         } catch (final Exception e) {
             LOGGER.error("Failed to process message", e);
         }
     }
 
-    private void consume(final Message<List<Object>> message) {
+    private void consume(final Message<List<Map<String, Object>>> message) {
         final var command = message.command();
         if (command.type() != Message.Type.REQUEST) {
             LOGGER.debug("Unhandled message type: {}", command.type());
@@ -94,6 +114,7 @@ public final class DataService extends AbstractReactive implements ReactiveServi
 
         final var method = command.method();
         LOGGER.debug("Processing request method: {}", method);
+        objects.addAll(message.value());
     }
 
     public void processAsync(final Payload<Map<String, Object>> payload,
@@ -113,26 +134,31 @@ public final class DataService extends AbstractReactive implements ReactiveServi
         return payload;
     }
 
-    private <T> void publish(final String source, final String method, final T data) {
-        final var command = Message.Command.of(Message.Type.RESPONSE, Constants.Source.COLLECTOR, method);
-        final var message = Message.of(command, data);
-        switch (source) {
-            case Constants.Source.CHATBOT -> {
-                chatbotPublisher.publish(
-                        AmqpConfig.getAmqpCryptoScoutExchange(),
-                        AmqpConfig.getAmqpChatbotRoutingKey(),
-                        message
-                );
-            }
-            case Constants.Source.COLLECTOR -> {
-                collectorPublisher.publish(
-                        AmqpConfig.getAmqpCryptoScoutExchange(),
-                        AmqpConfig.getAmqpCollectorRoutingKey(),
-                        message
-                );
-            }
-            default -> LOGGER.warn("Unknown source for response: {}", source);
-        }
+    private void getCryptoScoutFgi(final OffsetDateTime to) {
+        // 2018-02-01 00:00:00+00
+        final var from = OffsetDateTime.of(LocalDateTime.of(2018, 2, 1, 0, 0),
+                ZoneOffset.UTC);
+        collectorPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(), AmqpConfig.getAmqpCollectorRoutingKey(),
+                Message.of(Message.Command.of(Message.Type.REQUEST, ANALYST, CRYPTO_SCOUT_GET_FGI),
+                        new Object[]{from, to}));
+    }
+
+    private void getCryptoScoutBtcUsdtKline1d(final OffsetDateTime to) {
+        // 2010-07-13 00:00:00+00
+        final var from = OffsetDateTime.of(LocalDateTime.of(2010, 7, 13, 0, 0),
+                ZoneOffset.UTC);
+        collectorPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(), AmqpConfig.getAmqpCollectorRoutingKey(),
+                Message.of(Message.Command.of(Message.Type.REQUEST, ANALYST, CRYPTO_SCOUT_GET_KLINE_1D),
+                        new Object[]{BTC_USDT, from, to}));
+    }
+
+    private void getCryptoScoutBtcUsdtKline1w(final OffsetDateTime to) {
+        // 2013-04-22 00:00:00+00
+        final var from = OffsetDateTime.of(LocalDateTime.of(2013, 4, 22, 0, 0),
+                ZoneOffset.UTC);
+        collectorPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(), AmqpConfig.getAmqpCollectorRoutingKey(),
+                Message.of(Message.Command.of(Message.Type.REQUEST, ANALYST, CRYPTO_SCOUT_GET_KLINE_1W),
+                        new Object[]{BTC_USDT, from, to}));
     }
 
     private final class InternalStreamConsumer extends AbstractStreamConsumer<byte[]> {
