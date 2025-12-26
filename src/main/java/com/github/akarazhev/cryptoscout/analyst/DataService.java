@@ -24,44 +24,36 @@
 
 package com.github.akarazhev.cryptoscout.analyst;
 
+import com.github.akarazhev.cryptoscout.config.AmqpConfig;
 import com.github.akarazhev.jcryptolib.stream.Message;
 import com.github.akarazhev.jcryptolib.util.JsonUtils;
-import io.activej.reactor.AbstractReactive;
-import io.activej.reactor.nio.NioReactor;
+import io.activej.datastream.consumer.AbstractStreamConsumer;
+import io.activej.datastream.consumer.StreamConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public final class DataService extends AbstractReactive {
+public final class DataService {
     private final static Logger LOGGER = LoggerFactory.getLogger(DataService.class);
-    private final BybitStreamService bybitStreamService;
-    private final CryptoScoutService cryptoScoutService;
     private final AmqpPublisher chatbotPublisher;
     private final AmqpPublisher collectorPublisher;
 
-    public static DataService create(final NioReactor reactor,
-                                     final BybitStreamService bybitStreamService,
-                                     final CryptoScoutService cryptoScoutService,
-                                     final AmqpPublisher chatbotPublisher,
-                                     final AmqpPublisher collectorPublisher) {
-        return new DataService(reactor, bybitStreamService, cryptoScoutService, chatbotPublisher, collectorPublisher);
+    public static DataService create(final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher) {
+        return new DataService(chatbotPublisher, collectorPublisher);
     }
 
-    private DataService(final NioReactor reactor,
-                        final BybitStreamService bybitStreamService,
-                        final CryptoScoutService cryptoScoutService,
-                        final AmqpPublisher chatbotPublisher,
-                        final AmqpPublisher collectorPublisher) {
-        super(reactor);
-        this.bybitStreamService = bybitStreamService;
-        this.cryptoScoutService = cryptoScoutService;
+    private DataService(final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher) {
         this.chatbotPublisher = chatbotPublisher;
         this.collectorPublisher = collectorPublisher;
     }
 
+    public StreamConsumer<byte[]> getStreamConsumer() {
+        return new InternalStreamConsumer();
+    }
+
     @SuppressWarnings("unchecked")
-    public void consume(final byte[] body) {
+    private void consume(final byte[] body) {
         try {
             consume((Message<List<Object>>) JsonUtils.bytes2Object(body, Message.class));
         } catch (final Exception e) {
@@ -72,63 +64,116 @@ public final class DataService extends AbstractReactive {
     private void consume(final Message<List<Object>> message) {
         final var command = message.command();
         switch (command.type()) {
-            case Message.Type.RESPONSE -> {
+            case Message.Type.REQUEST -> {
                 switch (command.method()) {
                     // CryptoScoutCollector methods
                     case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.CRYPTO_SCOUT_GET_FGI -> {
+                        final var args = message.value();
                     }
 
                     // BybitCryptoCollector methods
                     case Constants.Method.BYBIT_GET_KLINE_1M -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_KLINE_5M -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_KLINE_15M -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_KLINE_60M -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_KLINE_240M -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_KLINE_1D -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_TICKER -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_ORDER_BOOK_1 -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_ORDER_BOOK_50 -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_ORDER_BOOK_200 -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_ORDER_BOOK_1000 -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_PUBLIC_TRADE -> {
+                        final var args = message.value();
                     }
 
                     case Constants.Method.BYBIT_GET_ALL_LIQUIDATION -> {
+                        final var args = message.value();
                     }
 
-                    default -> LOGGER.debug("Unhandled response method: {}", command.method());
+                    default -> LOGGER.debug("Unhandled request method: {}", command.method());
                 }
             }
 
             default -> LOGGER.debug("Unhandled message type: {}", command.type());
+        }
+    }
+
+    private <T> void publish(final String source, final String method, final T data) {
+        final var command = Message.Command.of(Message.Type.RESPONSE, Constants.Source.COLLECTOR, method);
+        switch (source) {
+            case Constants.Source.CHATBOT -> chatbotPublisher.publish(
+                    AmqpConfig.getAmqpCryptoScoutExchange(),
+                    AmqpConfig.getAmqpChatbotRoutingKey(),
+                    Message.of(command, data)
+            );
+
+            case Constants.Source.COLLECTOR -> collectorPublisher.publish(
+                    AmqpConfig.getAmqpCryptoScoutExchange(),
+                    AmqpConfig.getAmqpCollectorRoutingKey(),
+                    Message.of(command, data)
+            );
+
+            default -> LOGGER.warn("Unknown source for response: {}", source);
+        }
+    }
+
+    private final class InternalStreamConsumer extends AbstractStreamConsumer<byte[]> {
+
+        @Override
+        protected void onStarted() {
+            resume(DataService.this::consume);
+        }
+
+        @Override
+        protected void onEndOfStream() {
+            acknowledge();
+        }
+
+        @Override
+        protected void onError(final Exception e) {
+            LOGGER.error("Stream error in DataService consumer", e);
         }
     }
 }

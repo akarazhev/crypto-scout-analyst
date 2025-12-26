@@ -63,40 +63,6 @@ public final class AnalystModule extends AbstractModule {
     }
 
     @Provides
-    private StreamOffsetsRepository streamOffsetsRepository(final NioReactor reactor,
-                                                            final AnalystDataSource analystDataSource) {
-        return StreamOffsetsRepository.create(reactor, analystDataSource);
-    }
-
-    @Provides
-    private BybitStreamService bybitStreamService(final NioReactor reactor, final Executor executor,
-                                                  final StreamOffsetsRepository streamOffsetsRepository) {
-        return BybitStreamService.create(reactor, executor, streamOffsetsRepository);
-    }
-
-    @Provides
-    private CryptoScoutService cryptoScoutService(final NioReactor reactor, final Executor executor,
-                                                  final StreamOffsetsRepository streamOffsetsRepository) {
-        return CryptoScoutService.create(reactor, executor, streamOffsetsRepository);
-    }
-
-    @Provides
-    private DataService dataService(final NioReactor reactor,
-                                    final BybitStreamService bybitStreamService,
-                                    final CryptoScoutService cryptoScoutService,
-                                    @Named(CHATBOT_PUBLISHER) final AmqpPublisher chatbotPublisher,
-                                    @Named(COLLECTOR_PUBLISHER) final AmqpPublisher collectorPublisher) {
-        return DataService.create(reactor, bybitStreamService, cryptoScoutService, chatbotPublisher, collectorPublisher);
-    }
-
-    @Provides
-    @Eager
-    private StreamService streamService(final NioReactor reactor, final BybitStreamService bybitStreamService,
-                                        final CryptoScoutService cryptoScoutService) {
-        return StreamService.create(reactor, bybitStreamService, cryptoScoutService);
-    }
-
-    @Provides
     @Named(CHATBOT_PUBLISHER)
     @Eager
     private AmqpPublisher chatbotPublisher(final NioReactor reactor, final Executor executor) {
@@ -117,7 +83,41 @@ public final class AnalystModule extends AbstractModule {
     @Eager
     private AmqpConsumer analystConsumer(final NioReactor reactor, final Executor executor,
                                          final DataService dataService) {
-        return AmqpConsumer.create(reactor, executor, AmqpConfig.getConnectionFactory(), ANALYST_CONSUMER_CLIENT_NAME,
-                AmqpConfig.getAmqpCollectorQueue(), dataService::consume);
+
+        final var consumer = AmqpConsumer.create(reactor, executor, AmqpConfig.getConnectionFactory(),
+                ANALYST_CONSUMER_CLIENT_NAME, AmqpConfig.getAmqpCollectorQueue());
+        consumer.getStreamSupplier().streamTo(dataService.getStreamConsumer());
+        return consumer;
+    }
+
+    @Provides
+    private StreamOffsetsRepository streamOffsetsRepository(final NioReactor reactor,
+                                                            final AnalystDataSource analystDataSource) {
+        return StreamOffsetsRepository.create(reactor, analystDataSource);
+    }
+
+    @Provides
+    private BybitStreamService bybitStreamService(final NioReactor reactor, final Executor executor,
+                                                  final StreamOffsetsRepository streamOffsetsRepository) {
+        return BybitStreamService.create(reactor, executor, streamOffsetsRepository);
+    }
+
+    @Provides
+    private CryptoScoutService cryptoScoutService(final NioReactor reactor, final Executor executor,
+                                                  final StreamOffsetsRepository streamOffsetsRepository) {
+        return CryptoScoutService.create(reactor, executor, streamOffsetsRepository);
+    }
+
+    @Provides
+    @Eager
+    private StreamService streamService(final NioReactor reactor, final BybitStreamService bybitStreamService,
+                                        final CryptoScoutService cryptoScoutService) {
+        return StreamService.create(reactor, bybitStreamService, cryptoScoutService);
+    }
+
+    @Provides
+    private DataService dataService(@Named(CHATBOT_PUBLISHER) final AmqpPublisher chatbotPublisher,
+                                    @Named(COLLECTOR_PUBLISHER) final AmqpPublisher collectorPublisher) {
+        return DataService.create(chatbotPublisher, collectorPublisher);
     }
 }

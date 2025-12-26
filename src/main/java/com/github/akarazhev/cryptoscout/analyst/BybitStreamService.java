@@ -44,7 +44,6 @@ import io.activej.reactor.nio.NioReactor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.concurrent.Executor;
 
 public final class BybitStreamService extends AbstractReactive implements ReactiveService {
@@ -84,7 +83,7 @@ public final class BybitStreamService extends AbstractReactive implements Reacti
                 .then(() -> {
                     messageSupplier = MessageSupplier.create();
                     messageSupplier.transformWith(BytesToPayloadTransformer.create())
-                            .transformWith(BybitTransformer.create(List.of()))
+                            .transformWith(BybitTransformer.create())
                             .streamTo(StreamPublisher.create(producer, streamOffsetsRepository, executor));
                     return Promise.ofBlocking(executor, () -> {
                         consumer = environment.consumerBuilder()

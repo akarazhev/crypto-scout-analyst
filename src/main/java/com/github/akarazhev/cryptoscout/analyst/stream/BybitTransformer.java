@@ -31,17 +31,16 @@ import io.activej.datastream.supplier.StreamDataAcceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
 
 public final class BybitTransformer extends AbstractStreamTransformer<StreamPayload, StreamPayload> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BybitTransformer.class);
 
-    public static BybitTransformer create(final List<Map<String, Object>> objects) {
-        return new BybitTransformer(objects);
+    public static BybitTransformer create() {
+        return new BybitTransformer();
     }
 
-    private BybitTransformer(final List<Map<String, Object>> objects) {
+    private BybitTransformer() {
         super();
     }
 

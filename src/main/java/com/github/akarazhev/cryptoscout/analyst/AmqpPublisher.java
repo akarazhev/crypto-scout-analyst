@@ -48,11 +48,11 @@ import static com.github.akarazhev.cryptoscout.analyst.Constants.Amqp.RECONNECT_
 
 public final class AmqpPublisher extends AbstractReactive implements ReactiveService {
     private final static Logger LOGGER = LoggerFactory.getLogger(AmqpPublisher.class);
+    private final AtomicBoolean running = new AtomicBoolean(false);
     private final Executor executor;
     private final ConnectionFactory connectionFactory;
     private final String clientName;
     private final String queue;
-    private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile Connection connection;
     private volatile Channel channel;
 
@@ -91,8 +91,8 @@ public final class AmqpPublisher extends AbstractReactive implements ReactiveSer
                     reactor.execute(this::scheduleReconnect);
                 }
             };
-            connection.addShutdownListener(shutdownListener);
 
+            connection.addShutdownListener(shutdownListener);
             LOGGER.info("AmqpPublisher started for queue: {}", queue);
         } catch (final Exception ex) {
             LOGGER.error("Failed to start AmqpPublisher for queue: {}", queue, ex);

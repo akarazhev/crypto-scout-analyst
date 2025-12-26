@@ -31,7 +31,10 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.ShutdownListener;
 import io.activej.async.service.ReactiveService;
+import io.activej.datastream.supplier.AbstractStreamSupplier;
+import io.activej.datastream.supplier.StreamSupplier;
 import io.activej.promise.Promise;
+import io.activej.promise.SettablePromise;
 import io.activej.reactor.AbstractReactive;
 import io.activej.reactor.nio.NioReactor;
 import org.slf4j.Logger;
@@ -40,7 +43,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Amqp.MAX_RECONNECT_ATTEMPTS;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Amqp.PREFETCH_COUNT;
@@ -48,31 +50,34 @@ import static com.github.akarazhev.cryptoscout.analyst.Constants.Amqp.RECONNECT_
 
 public final class AmqpConsumer extends AbstractReactive implements ReactiveService {
     private final static Logger LOGGER = LoggerFactory.getLogger(AmqpConsumer.class);
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final InternalStreamSupplier streamSupplier = new InternalStreamSupplier();
     private final Executor executor;
     private final ConnectionFactory connectionFactory;
     private final String clientName;
     private final String queue;
-    private final Consumer<byte[]> consumerHandler;
-    private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile Connection connection;
     private volatile Channel channel;
     private volatile String consumerTag;
 
     public static AmqpConsumer create(final NioReactor reactor, final Executor executor,
                                       final ConnectionFactory connectionFactory, final String clientName,
-                                      final String queue, final Consumer<byte[]> consumerHandler) {
-        return new AmqpConsumer(reactor, executor, connectionFactory, clientName, queue, consumerHandler);
+                                      final String queue) {
+        return new AmqpConsumer(reactor, executor, connectionFactory, clientName, queue);
     }
 
     private AmqpConsumer(final NioReactor reactor, final Executor executor,
                          final ConnectionFactory connectionFactory, final String clientName,
-                         final String queue, final Consumer<byte[]> consumerHandler) {
+                         final String queue) {
         super(reactor);
         this.executor = executor;
         this.connectionFactory = connectionFactory;
         this.clientName = clientName;
         this.queue = queue;
-        this.consumerHandler = consumerHandler;
+    }
+
+    public StreamSupplier<byte[]> getStreamSupplier() {
+        return streamSupplier;
     }
 
     @Override
@@ -94,12 +99,12 @@ public final class AmqpConsumer extends AbstractReactive implements ReactiveServ
                     reactor.execute(this::scheduleReconnect);
                 }
             };
-            connection.addShutdownListener(shutdownListener);
 
+            connection.addShutdownListener(shutdownListener);
             final DeliverCallback deliver = (_, delivery) -> {
                 try {
                     final var body = delivery.getBody();
-                    reactor.execute(() -> consumerHandler.accept(body));
+                    reactor.execute(() -> streamSupplier.push(body));
                     channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } catch (final Exception e) {
                     try {
@@ -182,6 +187,34 @@ public final class AmqpConsumer extends AbstractReactive implements ReactiveServ
                     LOGGER.warn("Error closing AMQP connection for queue: {}", queue, ex);
                 }
             }
-        });
+        }).then(streamSupplier::complete);
+    }
+
+    private static final class InternalStreamSupplier extends AbstractStreamSupplier<byte[]> {
+        private final SettablePromise<Void> completion = new SettablePromise<>();
+
+        private void push(final byte[] data) {
+            if (!isEndOfStream()) {
+                send(data);
+            }
+        }
+
+        private Promise<Void> complete() {
+            if (!isEndOfStream()) {
+                sendEndOfStream();
+            }
+
+            return completion;
+        }
+
+        @Override
+        protected void onAcknowledge() {
+            completion.set(null);
+        }
+
+        @Override
+        protected void onError(final Exception e) {
+            completion.setException(e);
+        }
     }
 }
