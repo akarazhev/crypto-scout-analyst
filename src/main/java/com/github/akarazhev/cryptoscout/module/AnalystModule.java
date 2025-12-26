@@ -118,9 +118,9 @@ public final class AnalystModule extends AbstractModule {
     }
 
     @Provides
-    private DataService dataService(@Named(CHATBOT_PUBLISHER) final AmqpPublisher chatbotPublisher,
-                                    @Named(COLLECTOR_PUBLISHER) final AmqpPublisher collectorPublisher,
-                                    final Executor executor) {
-        return DataService.create(chatbotPublisher, collectorPublisher, executor);
+    private DataService dataService(final NioReactor reactor, final Executor executor,
+                                    @Named(CHATBOT_PUBLISHER) final AmqpPublisher chatbotPublisher,
+                                    @Named(COLLECTOR_PUBLISHER) final AmqpPublisher collectorPublisher) {
+        return DataService.create(reactor, executor, chatbotPublisher, collectorPublisher);
     }
 }

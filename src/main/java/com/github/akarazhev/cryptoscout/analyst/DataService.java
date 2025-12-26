@@ -28,8 +28,12 @@ import com.github.akarazhev.cryptoscout.config.AmqpConfig;
 import com.github.akarazhev.jcryptolib.stream.Message;
 import com.github.akarazhev.jcryptolib.stream.Payload;
 import com.github.akarazhev.jcryptolib.util.JsonUtils;
+import io.activej.async.service.ReactiveService;
 import io.activej.datastream.consumer.AbstractStreamConsumer;
 import io.activej.datastream.consumer.StreamConsumer;
+import io.activej.promise.Promise;
+import io.activej.reactor.AbstractReactive;
+import io.activej.reactor.nio.NioReactor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,22 +43,33 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
-public final class DataService {
+public final class DataService extends AbstractReactive implements ReactiveService {
     private final static Logger LOGGER = LoggerFactory.getLogger(DataService.class);
     private final AmqpPublisher chatbotPublisher;
     private final AmqpPublisher collectorPublisher;
     private final Executor executor;
 
-    public static DataService create(final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher,
-                                     final Executor executor) {
-        return new DataService(chatbotPublisher, collectorPublisher, executor);
+    public static DataService create(final NioReactor reactor, final Executor executor,
+                                     final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher) {
+        return new DataService(reactor, executor, chatbotPublisher, collectorPublisher);
     }
 
-    private DataService(final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher,
-                        final Executor executor) {
+    private DataService(final NioReactor reactor, final Executor executor,
+                        final AmqpPublisher chatbotPublisher, final AmqpPublisher collectorPublisher) {
+        super(reactor);
+        this.executor = executor;
         this.chatbotPublisher = chatbotPublisher;
         this.collectorPublisher = collectorPublisher;
-        this.executor = executor;
+    }
+
+    @Override
+    public Promise<Void> start() {
+        return Promise.complete();
+    }
+
+    @Override
+    public Promise<Void> stop() {
+        return Promise.complete();
     }
 
     public StreamConsumer<byte[]> getStreamConsumer() {
@@ -82,7 +97,7 @@ public final class DataService {
     }
 
     public void processAsync(final Payload<Map<String, Object>> payload,
-                              final BiConsumer<Payload<Map<String, Object>>, Exception> callback) {
+                             final BiConsumer<Payload<Map<String, Object>>, Exception> callback) {
         CompletableFuture.supplyAsync(() -> enrichPayload(payload), executor)
                 .whenComplete((result, error) -> {
                     if (error != null) {
@@ -101,7 +116,6 @@ public final class DataService {
     private <T> void publish(final String source, final String method, final T data) {
         final var command = Message.Command.of(Message.Type.RESPONSE, Constants.Source.COLLECTOR, method);
         final var message = Message.of(command, data);
-        
         switch (source) {
             case Constants.Source.CHATBOT -> {
                 chatbotPublisher.publish(

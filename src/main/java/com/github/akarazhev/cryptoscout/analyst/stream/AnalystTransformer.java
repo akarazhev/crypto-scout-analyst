@@ -104,6 +104,7 @@ public final class AnalystTransformer extends AbstractStreamTransformer<StreamPa
         if (!Provider.BYBIT.equals(payload.getProvider())) {
             return null;
         }
+
         return Payload.of(Provider.BYBIT_TA, payload.getSource(), payload.getData());
     }
 
