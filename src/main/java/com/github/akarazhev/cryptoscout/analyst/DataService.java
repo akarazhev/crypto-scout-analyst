@@ -37,10 +37,8 @@ import io.activej.reactor.nio.NioReactor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayDeque;
 import java.util.List;
@@ -48,16 +46,15 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_FGI;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Source.ANALYST;
 import static com.github.akarazhev.jcryptolib.bybit.Constants.Symbol.BTC_USDT;
+import static com.github.akarazhev.jcryptolib.util.TimeUtils.toOdt;
 import static com.github.akarazhev.jcryptolib.util.TimeUtils.tomorrowInUtc;
 
 public final class DataService extends AbstractReactive implements ReactiveService {
     private final static Logger LOGGER = LoggerFactory.getLogger(DataService.class);
-    private final Queue<Map<String, Object>> cryptoScoutFgis = new ArrayDeque<>();
     private final Queue<Map<String, Object>> cryptoScoutKlines1d = new ArrayDeque<>();
     private final Queue<Map<String, Object>> cryptoScoutKlines1w = new ArrayDeque<>();
     private final Queue<Map<String, Object>> bybitKlines1m = new ArrayDeque<>();
@@ -88,10 +85,6 @@ public final class DataService extends AbstractReactive implements ReactiveServi
         this.executor = executor;
         this.chatbotPublisher = chatbotPublisher;
         this.collectorPublisher = collectorPublisher;
-    }
-
-    Queue<Map<String, Object>> getCryptoScoutFgis() {
-        return cryptoScoutFgis;
     }
 
     Queue<Map<String, Object>> getCryptoScoutKlines1d() {
@@ -156,8 +149,7 @@ public final class DataService extends AbstractReactive implements ReactiveServi
 
     @Override
     public Promise<Void> start() {
-        final var to = OffsetDateTime.ofInstant(Instant.ofEpochSecond(tomorrowInUtc()), ZoneId.of("UTC"));
-        getCryptoScoutFgi(to);
+        final var to = toOdt(tomorrowInUtc());
         getCryptoScoutBtcUsdtKline1d(to);
         getCryptoScoutBtcUsdtKline1w(to);
         return Promise.complete();
@@ -165,7 +157,6 @@ public final class DataService extends AbstractReactive implements ReactiveServi
 
     @Override
     public Promise<Void> stop() {
-        cryptoScoutFgis.clear();
         cryptoScoutKlines1d.clear();
         cryptoScoutKlines1w.clear();
         bybitKlines1m.clear();
@@ -205,7 +196,6 @@ public final class DataService extends AbstractReactive implements ReactiveServi
                     // CryptoScoutCollector methods
                     case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D -> cryptoScoutKlines1d.addAll(message.value());
                     case Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W -> cryptoScoutKlines1w.addAll(message.value());
-                    case Constants.Method.CRYPTO_SCOUT_GET_FGI -> cryptoScoutFgis.addAll(message.value());
                     // BybitCryptoCollector methods
                     case Constants.Method.BYBIT_GET_KLINE_1M -> bybitKlines1m.addAll(message.value());
                     case Constants.Method.BYBIT_GET_KLINE_5M -> bybitKlines5m.addAll(message.value());
@@ -235,15 +225,6 @@ public final class DataService extends AbstractReactive implements ReactiveServi
 
     private Payload<Map<String, Object>> enrichPayload(final Payload<Map<String, Object>> payload) {
         return payload;
-    }
-
-    private void getCryptoScoutFgi(final OffsetDateTime to) {
-        // 2018-02-01 00:00:00+00
-        final var from = OffsetDateTime.of(LocalDateTime.of(2018, 2, 1, 0, 0),
-                ZoneOffset.UTC);
-        collectorPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(), AmqpConfig.getAmqpCollectorRoutingKey(),
-                Message.of(Message.Command.of(Message.Type.REQUEST, ANALYST, CRYPTO_SCOUT_GET_FGI),
-                        new Object[]{from, to}));
     }
 
     private void getCryptoScoutBtcUsdtKline1d(final OffsetDateTime to) {

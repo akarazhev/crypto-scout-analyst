@@ -59,7 +59,6 @@ import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GE
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_ORDER_BOOK_50;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_PUBLIC_TRADE;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.BYBIT_GET_TICKER;
-import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_FGI;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_KLINE_1D;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Method.CRYPTO_SCOUT_GET_KLINE_1W;
 import static com.github.akarazhev.cryptoscout.analyst.Constants.Source.COLLECTOR;
@@ -127,8 +126,7 @@ final class DataServiceTest {
         assertNotNull(message);
         assertEquals(Message.Type.REQUEST, message.command().type());
         assertEquals(Constants.Source.ANALYST, message.command().source());
-        assertTrue(message.command().method().equals(CRYPTO_SCOUT_GET_FGI) ||
-                message.command().method().equals(CRYPTO_SCOUT_GET_KLINE_1D) ||
+        assertTrue(message.command().method().equals(CRYPTO_SCOUT_GET_KLINE_1D) ||
                 message.command().method().equals(CRYPTO_SCOUT_GET_KLINE_1W));
         assertNotNull(message.value());
     }
@@ -137,22 +135,6 @@ final class DataServiceTest {
     void serviceStopClearsState() {
         TestUtils.await(dataService.start());
         TestUtils.await(dataService.stop());
-    }
-
-    @Test
-    void consumesCryptoScoutFgiResponse() throws Exception {
-        final var fgi = MockData.get(MockData.Source.CRYPTO_SCOUT, MockData.Type.FGI);
-        final var message = Message.of(
-                Message.Command.of(Message.Type.RESPONSE, COLLECTOR, CRYPTO_SCOUT_GET_FGI),
-                List.of(fgi));
-
-        TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(), message));
-        processMessages();
-        final var fgis = dataService.getCryptoScoutFgis();
-        assertNotNull(fgis);
-        assertEquals(1, fgis.size());
-        assertEquals(fgi, fgis.peek());
     }
 
     @Test
@@ -416,13 +398,13 @@ final class DataServiceTest {
                         List.of(Map.of("test", "data")))));
     }
 
-    @Test
-    void handlesUnknownMessageTypeGracefully() {
-        TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
-                AmqpConfig.getAmqpAnalystRoutingKey(),
-                Message.of(Message.Command.of(Message.Type.REQUEST, COLLECTOR, CRYPTO_SCOUT_GET_FGI),
-                        List.of(Map.of("test", "data")))));
-    }
+//    @Test
+//    void handlesUnknownMessageTypeGracefully() {
+//        TestUtils.await(analystTestPublisher.publish(AmqpConfig.getAmqpCryptoScoutExchange(),
+//                AmqpConfig.getAmqpAnalystRoutingKey(),
+//                Message.of(Message.Command.of(Message.Type.REQUEST, COLLECTOR, CRYPTO_SCOUT_GET_FGI),
+//                        List.of(Map.of("test", "data")))));
+//    }
 
     @AfterAll
     static void cleanup() {

@@ -37,7 +37,6 @@ final class Constants {
         // CryptoScoutCollector methods
         static final String CRYPTO_SCOUT_GET_KLINE_1D = "cmcParser.getKline1d";
         static final String CRYPTO_SCOUT_GET_KLINE_1W = "cmcParser.getKline1w";
-        static final String CRYPTO_SCOUT_GET_FGI = "cmcParser.getFgi";
 
         // BybitCryptoCollector methods
         static final String BYBIT_GET_KLINE_1M = "bybit.getKline1m";
