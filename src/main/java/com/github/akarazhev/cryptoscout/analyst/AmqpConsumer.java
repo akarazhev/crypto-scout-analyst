@@ -103,8 +103,7 @@ public final class AmqpConsumer extends AbstractReactive implements ReactiveServ
             connection.addShutdownListener(shutdownListener);
             final DeliverCallback deliver = (_, delivery) -> {
                 try {
-                    final var body = delivery.getBody();
-                    reactor.execute(() -> streamSupplier.push(body));
+                    reactor.execute(() -> streamSupplier.push(delivery.getBody()));
                     channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } catch (final Exception e) {
                     try {
