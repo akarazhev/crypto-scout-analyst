@@ -2,7 +2,7 @@
 description: Code reviewer for the crypto-scout-analyst service - stream processing patterns
 code: reviewer
 mode: subagent
-model: zai-coding-plan/glm-4.7
+model: opencode/kimi-k2.5-free
 temperature: 0.1
 tools:
   write: false
