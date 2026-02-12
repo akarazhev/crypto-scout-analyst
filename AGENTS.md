@@ -6,6 +6,46 @@ This document provides guidelines for agentic coding contributors to the crypto-
 
 Java 25 Maven microservice for real-time cryptocurrency market analysis. Consumes data from RabbitMQ Streams, applies technical analysis using jcryptolib indicators, and provides analytical capabilities. Built on ActiveJ for fully async I/O.
 
+## MCP Server Configuration
+
+This module uses the **Context7 MCP server** for enhanced code intelligence and documentation retrieval.
+
+### Available MCP Tools
+
+When working with this codebase, you can use the following MCP tools via the context7 server:
+
+- **resolve-library-id**: Resolve a library name to its Context7 library ID
+- **get-library-docs**: Retrieve up-to-date documentation for a library by its ID
+
+### Configuration
+
+The MCP server is configured in `.opencode/package.json`:
+
+```json
+{
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "ctx7sk-4cec80b8-d947-4ff4-a29a-d00bea5a2fac"
+      },
+      "enabled": true
+    }
+  }
+}
+```
+
+### Usage Guidelines
+
+1. **ActiveJ Documentation**: Use `resolve-library-id` for "activej" to get the latest async I/O patterns, Promise APIs, and stream transformer documentation.
+
+2. **RabbitMQ Streams**: Retrieve docs for "rabbitmq-stream-client" to ensure correct consumer/producer implementations.
+
+3. **Technical Analysis**: Access ta4j library documentation for indicator implementations and analysis patterns.
+
+4. **PostgreSQL/HikariCP**: Get JDBC best practices and connection pool configuration guidance.
+
 ## Build, Test, and Lint Commands
 
 ### Build
