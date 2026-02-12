@@ -28,12 +28,17 @@ The MCP server is configured in `.opencode/package.json`:
       "type": "remote",
       "url": "https://mcp.context7.com/mcp",
       "headers": {
-        "CONTEXT7_API_KEY": "ctx7sk-4cec80b8-d947-4ff4-a29a-d00bea5a2fac"
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
       },
       "enabled": true
     }
   }
 }
+```
+
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
 ### Usage Guidelines
@@ -54,10 +59,20 @@ mvn clean install
 mvn -q -DskipTests install
 ```
 
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
+```
+
 ### Run All Tests
 ```bash
 mvn test
 mvn -q test
+```
+
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
 ### Run Single Test
@@ -67,10 +82,20 @@ mvn test -Dtest=StreamOffsetsRepositoryTest
 mvn -q test -Dtest=DataServiceTest
 ```
 
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
+```
+
 ### Run Tests with System Properties
 ```bash
 mvn -q -Dpodman.compose.up.timeout.min=5 test
 mvn -q -Dtest.db.jdbc.url=jdbc:postgresql://localhost:5432/crypto_scout test
+```
+
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
 ### Clean
@@ -78,11 +103,26 @@ mvn -q -Dtest.db.jdbc.url=jdbc:postgresql://localhost:5432/crypto_scout test
 mvn clean
 ```
 
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
+```
+
 ## Architecture
 
 ### Stream Processing Pipeline
 ```
+
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
+```
 RabbitMQ Stream → Consumer → BytesToPayloadTransformer → AnalystTransformer → DataService → Output
+```
+
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
 ### Key Components
@@ -120,6 +160,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_RABBITMQ_HOST;
+```
+
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
 ### Naming Conventions
@@ -173,6 +218,11 @@ public final class AnalystTransformer extends AbstractStreamTransformer<StreamPa
 }
 ```
 
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
+```
+
 ### Testing (JUnit 6/Jupiter)
 - **Test classes**: Package-private, no modifiers (e.g., `final class DataServiceTest`)
 - **Lifecycle methods**: `@BeforeAll static void setUp()`, `@AfterAll static void tearDown()`
@@ -203,6 +253,11 @@ final class Constants {
 }
 ```
 
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
+```
+
 ### Concurrency
 - **Volatile fields**: For lazy-initialized singleton-style fields
 - **Thread naming**: Provide names for background threads
@@ -228,6 +283,11 @@ All configuration via system properties with defaults:
 static final String VALUE = System.getProperty("property.key", "defaultValue");
 static final int PORT = Integer.parseInt(System.getProperty("port.key", "5552"));
 static final Duration TIMEOUT = Duration.ofMinutes(Long.getLong("timeout.key", 3L));
+```
+
+**Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
 ## Key Dependencies
