@@ -41,6 +41,9 @@ The MCP server is configured in `.opencode/package.json`:
 export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
+```
+
 ### Usage Guidelines
 
 1. **ActiveJ Documentation**: Use `resolve-library-id` for "activej" to get the latest async I/O patterns, Promise APIs, and stream transformer documentation.
@@ -64,6 +67,9 @@ mvn -q -DskipTests install
 export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
+```
+
 ### Run All Tests
 ```bash
 mvn test
@@ -73,6 +79,9 @@ mvn -q test
 **Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
 ```bash
 export CONTEXT7_API_KEY="your-api-key-here"
+```
+
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
 ```
 
 ### Run Single Test
@@ -87,6 +96,9 @@ mvn -q test -Dtest=DataServiceTest
 export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
+```
+
 ### Run Tests with System Properties
 ```bash
 mvn -q -Dpodman.compose.up.timeout.min=5 test
@@ -96,6 +108,9 @@ mvn -q -Dtest.db.jdbc.url=jdbc:postgresql://localhost:5432/crypto_scout test
 **Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
 ```bash
 export CONTEXT7_API_KEY="your-api-key-here"
+```
+
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
 ```
 
 ### Clean
@@ -108,6 +123,9 @@ mvn clean
 export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
+```
+
 ## Architecture
 
 ### Stream Processing Pipeline
@@ -117,12 +135,18 @@ export CONTEXT7_API_KEY="your-api-key-here"
 ```bash
 export CONTEXT7_API_KEY="your-api-key-here"
 ```
+
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
+```
 RabbitMQ Stream → Consumer → BytesToPayloadTransformer → AnalystTransformer → DataService → Output
 ```
 
 **Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
 ```bash
 export CONTEXT7_API_KEY="your-api-key-here"
+```
+
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
 ```
 
 ### Key Components
@@ -165,6 +189,9 @@ import static com.github.akarazhev.cryptoscout.config.Constants.AmqpConfig.AMQP_
 **Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
 ```bash
 export CONTEXT7_API_KEY="your-api-key-here"
+```
+
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
 ```
 
 ### Naming Conventions
@@ -223,6 +250,9 @@ public final class AnalystTransformer extends AbstractStreamTransformer<StreamPa
 export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
+```
+
 ### Testing (JUnit 6/Jupiter)
 - **Test classes**: Package-private, no modifiers (e.g., `final class DataServiceTest`)
 - **Lifecycle methods**: `@BeforeAll static void setUp()`, `@AfterAll static void tearDown()`
@@ -258,6 +288,9 @@ final class Constants {
 export CONTEXT7_API_KEY="your-api-key-here"
 ```
 
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
+```
+
 ### Concurrency
 - **Volatile fields**: For lazy-initialized singleton-style fields
 - **Thread naming**: Provide names for background threads
@@ -288,6 +321,9 @@ static final Duration TIMEOUT = Duration.ofMinutes(Long.getLong("timeout.key", 3
 **Note:** The API key is loaded from the `CONTEXT7_API_KEY` environment variable. Set it before running OpenCode:
 ```bash
 export CONTEXT7_API_KEY="your-api-key-here"
+```
+
+**Important:** The MCP server must be configured in your **global OpenCode config** (`~/.config/opencode/opencode.json`) to be active. The project's `.opencode/package.json` serves as documentation and reference for the expected configuration. See the root project's AGENTS.md for the complete global configuration.
 ```
 
 ## Key Dependencies
